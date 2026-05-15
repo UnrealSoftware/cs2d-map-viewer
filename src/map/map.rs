@@ -99,7 +99,7 @@ impl Map {
     }
 
     pub fn draw_shadows(&mut self, assets: &Assets) {
-        gl_use_material(&assets.grayscale_alpha_material);
+        gl_use_material(&assets.materials.grayscale_to_alpha);
         let tiles_per_row = (assets.shadow_texture.width() / 32.0) as u8;
 
         for y in 0..self.size.y {

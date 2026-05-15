@@ -6,6 +6,7 @@ mod tile_modes;
 mod util;
 mod map;
 mod assets;
+mod materials;
 
 use audio::AudioPlayer;
 use crate::map::map::Map;
