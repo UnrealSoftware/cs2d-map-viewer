@@ -48,7 +48,7 @@ async fn main() {
     let render_target = render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32);
     //render_target.texture.set_filter(FilterMode::Nearest);
 
-    let spritesheet = load_texture("assets/default_dust.png").await.unwrap();
+    map.tile_texture = Some(load_texture("assets/default_dust.png").await.unwrap());
     //spritesheet.set_filter(FilterMode::Nearest);
 
     //let mut audio = AudioPlayer::new();
@@ -85,30 +85,7 @@ async fn main() {
 
         clear_background(Color::new(0.1, 0.1, 0.1, 1.0));
 
-        let tiles_per_row = (spritesheet.width() / TILE_SIZE) as u8;
-        for y in 0..map.size.y {
-            for x in 0..map.size.x {
-
-                let tile_index = map.tiles[(y * map.size.x + x) as usize];
-                let tile_x = tile_index % tiles_per_row;
-                let tile_y = tile_index / tiles_per_row;
-
-                draw_texture_ex(
-                    &spritesheet,
-                    x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
-                    WHITE,
-                    DrawTextureParams {
-                        source: Option::from(Rect {
-                            x: tile_x as f32 * TILE_SIZE,
-                            y: tile_y as f32 * TILE_SIZE,
-                            w: TILE_SIZE,
-                            h: TILE_SIZE
-                        }),
-                        ..Default::default()
-                    }
-                );
-            }
-        }
+        map.draw(0);
 
         // UI
 

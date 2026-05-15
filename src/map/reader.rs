@@ -3,9 +3,11 @@ use std::io::{Cursor, Read};
 use byteorder::{LittleEndian, ReadBytesExt};
 use macroquad::file::load_file;
 use macroquad::math::U16Vec2;
-use crate::map::entity::Entity;
 use crate::map::map::Map;
+use crate::map::tile::Tile;
+use crate::map::tile_modifiers::TileModifiers;
 use crate::util::io::read_string;
+use crate::util::rgb::Rgb;
 
 pub async fn read_map_file(path: &str, map: &mut Map ) -> io::Result<()> {
     let bytes = load_file(path).await.unwrap();
@@ -103,12 +105,16 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
 
     // --- (4) MAP
     map.size = U16Vec2::new(width as u16, height as u16);
-    map.tiles = vec![0; (width * height) as usize];
+    map.tiles = vec![Tile::default(); (width * height) as usize];
+    map.modifiers = vec![TileModifiers::default(); (width * height) as usize];
 
     for x in 0..width {
         for y in 0..height {
-            let tile_id = reader.read_u8()?;
-            map.tiles[(y * width + x) as usize] = tile_id;
+            let tile_frame = reader.read_u8()?;
+            map.tiles[(y * width + x) as usize] = Tile {
+                frame: tile_frame,
+                ..Default::default()
+            };
         }
     }
 
@@ -116,18 +122,24 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
         for x in 0..width {
             for y in 0..height {
                 let tile_modifier = reader.read_u8()?;
+                let idx = (y * width + x) as usize;
+                map.tiles[idx].modifier = tile_modifier;
+
                 let has64 = tile_modifier & 64 != 0;
                 let has128 = tile_modifier & 128 != 0;
                 if has64 || has128 {
                     if has64 && has128 {
                         _ = read_string(&mut reader)?;
                     } else if has64 && !has128 {
-                        _ = reader.read_u8()?;
+                        let frame = reader.read_u8()?;
+                        map.modifiers[idx].frame = frame;
                     } else {
-                        _ = reader.read_u8()?;
-                        _ = reader.read_u8()?;
-                        _ = reader.read_u8()?;
-                        _ = reader.read_u8()?;
+                        let r = reader.read_u8()?;
+                        let g = reader.read_u8()?;
+                        let b = reader.read_u8()?;
+                        let overlay = reader.read_u8()?;
+                        map.modifiers[idx].rgb = Rgb::new(r, g, b);
+                        map.modifiers[idx].overlay = overlay;
                     }
                 }
             }
