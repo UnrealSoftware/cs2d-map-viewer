@@ -1,0 +1,26 @@
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct RectI {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+impl RectI {
+    pub fn new(x: i32, y: i32, width: i32, height: i32) -> Self {
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+
+    pub fn get_end_x(self) -> i32 {
+        self.x + self.width
+    }
+
+    pub fn get_end_y(self) -> i32 {
+        self.y + self.height
+    }
+}

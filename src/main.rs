@@ -5,6 +5,7 @@ mod audio;
 mod tile_modes;
 mod util;
 mod map;
+mod assets;
 
 use audio::AudioPlayer;
 use crate::map::map::Map;
@@ -13,7 +14,7 @@ use crate::map::reader::read_map_file;
 const TILE_SIZE: f32 = 32.0;
 const MAP_WIDTH: i32 = 50;
 const MAP_HEIGHT: i32 = 50;
-const MOVE_SPEED: f32 = 200.0;
+const MOVE_SPEED: f32 = 500.0;
 
 const GAME_WIDTH: f32 = 1920.0;
 const GAME_HEIGHT: f32 = 1080.0;
@@ -39,6 +40,8 @@ async fn main() {
         MAP_HEIGHT as f32 * TILE_SIZE / 2.0
     );
 
+    let assets = assets::Assets::load().await;
+
     let start = Instant::now();
     let mut map = Map::default();
     read_map_file("assets/maps/de_dust2.map", &mut map).await.unwrap();
@@ -49,6 +52,7 @@ async fn main() {
     //render_target.texture.set_filter(FilterMode::Nearest);
 
     map.tile_texture = Some(load_texture("assets/default_dust.png").await.unwrap());
+    map.tiles_per_row = (map.tile_texture.as_ref().unwrap().width() / TILE_SIZE) as u8;
     //spritesheet.set_filter(FilterMode::Nearest);
 
     //let mut audio = AudioPlayer::new();
@@ -57,7 +61,7 @@ async fn main() {
     loop {
         let delta = get_frame_time();
 
-        let mut speed = if is_key_down(KeyCode::LeftShift) { 10.0 } else { 1.0 };
+        let mut speed = if is_key_down(KeyCode::LeftShift) { 5.0 } else { 1.0 };
         if is_key_down(KeyCode::LeftAlt) { speed *= 0.1; }
         speed *= MOVE_SPEED * delta;
         if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { world_target.y -= speed; }
@@ -85,7 +89,8 @@ async fn main() {
 
         clear_background(Color::new(0.1, 0.1, 0.1, 1.0));
 
-        map.draw(0);
+        map.draw(&assets, 0);
+        map.draw_shadows(&assets);
 
         // UI
 

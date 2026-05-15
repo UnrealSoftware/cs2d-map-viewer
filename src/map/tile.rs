@@ -4,4 +4,5 @@
 pub struct Tile {
     pub frame: u8,
     pub modifier: u8,
+    pub mode: u8,
 }

@@ -80,33 +80,42 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
 
     // Header Test
     let header_test = read_string(&mut reader)?;
-    if (header_test != "ed.erawtfoslaernu") {
+    if header_test != "ed.erawtfoslaernu" {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid post map header string"));
     }
 
     let tile_it_count = tile_count + 1;
 
     // --- (2) TILE MODES
+    map.tile_modes = vec![0; tile_it_count as usize];
+    map.tile_heights = vec![0; tile_it_count as usize];
+    map.tile_3d_modifiers = vec![0; tile_it_count as usize];
     for i in 0..tile_it_count {
-        let tile_mode = reader.read_u8();
+        let tile_mode = reader.read_u8()?;
+        map.tile_modes[i as usize] = tile_mode;
     }
 
     // --- (3) TILE HEIGHTS
-    if (save_tile_heights == 1) {
+    if save_tile_heights == 1 {
         for i in 0..tile_it_count {
             let tile_height = reader.read_i32::<E>()?;
+            map.tile_heights[i as usize] = tile_height as u16;
         }
-    } else if (save_tile_heights == 2) {
+    } else if save_tile_heights == 2 {
         for i in 0..tile_it_count {
             let tile_height = reader.read_u16::<E>()?;
             let tile_modifier = reader.read_u8()?;
+            map.tile_heights[i as usize] = tile_height;
+            map.tile_3d_modifiers[i as usize] = tile_modifier;
         }
     }
 
     // --- (4) MAP
+    let size = (width * height) as usize;
     map.size = U16Vec2::new(width as u16, height as u16);
-    map.tiles = vec![Tile::default(); (width * height) as usize];
-    map.modifiers = vec![TileModifiers::default(); (width * height) as usize];
+    map.tiles = vec![Tile::default(); size];
+    map.modifiers = vec![TileModifiers::default(); size];
+    map.shadows = vec![0; size];
 
     for x in 0..width {
         for y in 0..height {
@@ -165,6 +174,7 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
 
     map.path = path.to_owned();
 
+    map.map_update(true, true, true, None);
 
     Ok(())
 
