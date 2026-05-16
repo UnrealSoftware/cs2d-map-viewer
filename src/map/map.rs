@@ -37,6 +37,7 @@ impl Map {
         const RAD180: f32 = std::f32::consts::PI;
 
         let tex = self.tile_texture.as_ref().unwrap();
+        let size = vec2(TILE_SIZE, TILE_SIZE);
 
         for y in 0..self.size.y {
             for x in 0..self.size.x {
@@ -76,25 +77,8 @@ impl Map {
                     }
                 }
 
-                &tex.draw(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE, tile.frame as u16, color, rot);
-
-                /*
-                draw_texture_ex(
-                    &tex,
-                    x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
-                    color,
-                    DrawTextureParams {
-                        source: Option::from(Rect {
-                            x: tile_x as f32 * TILE_SIZE,
-                            y: tile_y as f32 * TILE_SIZE,
-                            w: TILE_SIZE,
-                            h: TILE_SIZE
-                        }),
-                        rotation: rot,
-                        ..Default::default()
-                    }
-                );
-                 */
+                tex.draw_ex(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
+                         tile.frame as u16, color, rot, size);
             }
         }
     }
@@ -108,11 +92,10 @@ impl Map {
                 let shadow_frame = self.shadows[idx];
                 if shadow_frame == 255 { continue; }
 
-                &assets.shadow_sheet.draw(
+                assets.shadow_sheet.draw(
                     x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
                     shadow_frame as u16,
-                    Color::new(0.0, 0.0, 0.0, 0.3),
-                    0.0
+                    Color::new(0.0, 0.0, 0.0, 0.3)
                 );
             }
         }

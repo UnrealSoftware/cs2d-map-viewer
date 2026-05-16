@@ -84,7 +84,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -
     let mut tile_path = String::from("assets/gfx/tiles/");
     tile_path.push_str(&tileset_filename);
     let tex = load_texture(&tile_path).await.unwrap();
-    map.tile_texture = Option::from(TextureSheet::new(tex, IVec2::new(TILE_SIZE as i32, TILE_SIZE as i32)));
+    map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
 
     if !bg_filename.is_empty() {
         let mut bg_path = String::from("assets/gfx/backgrounds/");
@@ -165,7 +165,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -
                         let b = reader.read_u8()?;
                         let overlay = reader.read_u8()?;
                         map.modifiers[idx].rgb = Rgb::new(r, g, b);
-                        map.modifiers[idx].overlay = overlay;
+                        map.modifiers[idx].frame = overlay;
                     }
                 }
             }

@@ -12,7 +12,7 @@ impl Assets {
         let shadow_tex = load_texture("assets/shadowmap.png")
             .await
             .expect("failed to load shadow map texture");
-        let shadow_sheet = TextureSheet::new(shadow_tex, IVec2::new(32, 32));
+        let shadow_sheet = TextureSheet::new(shadow_tex, vec2(32.0, 32.0));
 
         let materials = Materials::load().await;
 
