@@ -33,8 +33,10 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-
-    info!("Query Params: '{}'", util::query::get_query_params());
+    let _ = util::params::APP_PARAMS.set(util::params::get_params());
+    for (key, value) in util::params::APP_PARAMS.get().unwrap() {
+        info!("Param: {}={}", key, value);
+    }
 
     let mut world_target = vec2(
         MAP_WIDTH as f32 * TILE_SIZE / 2.0,
