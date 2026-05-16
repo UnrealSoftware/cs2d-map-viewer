@@ -7,18 +7,19 @@ use crate::map::tile::Tile;
 use crate::map::entity::Entity;
 use crate::map::entity_type::EntityType;
 use crate::map::tile_modifiers::TileModifiers;
+use crate::TILE_SIZE;
 use crate::util::io::read_string;
 use crate::util::rgb::Rgb;
 
 pub async fn read_map_file(path: &str, map: &mut Map ) -> io::Result<()> {
     let bytes = load_file(path).await.unwrap();
     let mut reader = Cursor::new(bytes);
-    read_map_bytes(&mut reader, path, map)
+    read_map_bytes(&mut reader, path, map).await
 }
 
 /// Reads and parses the binary map format from any `Read` source (like a File)
 /// Specs https://www.unrealsoftware.de/files_pub/cs2d_spec_map_format.txt
-pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::Result<()> {
+pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::Result<()> {
     type E = LittleEndian;
 
     // --- (1) HEADER
@@ -72,12 +73,26 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
     let tile_count = reader.read_u8()?;
     let width = reader.read_i32::<E>()? + 1;
     let height = reader.read_i32::<E>()? + 1;
-    let background_filename = read_string(&mut reader)?;
-    let background_scroll_x = reader.read_i32::<E>()?;
-    let background_scroll_y = reader.read_i32::<E>()?;
-    let background_color_r = reader.read_u8()?;
-    let background_color_g = reader.read_u8()?;
-    let background_color_b = reader.read_u8()?;
+    let bg_filename = read_string(&mut reader)?;
+    let bg_scroll_x = reader.read_i32::<E>()?;
+    let bg_scroll_y = reader.read_i32::<E>()?;
+    let bg_color_r = reader.read_u8()?;
+    let bg_color_g = reader.read_u8()?;
+    let bg_color_b = reader.read_u8()?;
+
+    let mut tile_path = String::from("assets/gfx/tiles/");
+    tile_path.push_str(&tileset_filename);
+    println!("Tileset: {}", tile_path);
+    map.tile_texture = Some(load_texture(&tile_path).await.unwrap());
+    map.tiles_per_row = (map.tile_texture.as_ref().unwrap().width() / TILE_SIZE) as u8;
+
+    if !bg_filename.is_empty() {
+        let mut bg_path = String::from("assets/gfx/backgrounds/");
+        bg_path.push_str(&bg_filename);
+        map.background.texture = Some(load_texture(&bg_path).await.unwrap());
+    }
+    map.background.scroll_speed = IVec2::new(bg_scroll_x, bg_scroll_y);
+    map.background.color = Color::from_rgba(bg_color_r, bg_color_g, bg_color_b, 255);
 
     // Header Test
     let header_test = read_string(&mut reader)?;
@@ -193,40 +208,4 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
     map.map_update(true, true, true, None);
 
     Ok(())
-
-    /*
-    // 3. Read Tile Information
-    let total_tiles = (width * height) as usize;
-    let mut tiles = Vec::with_capacity(total_tiles);
-
-    for _ in 0..total_tiles {
-        // Adjust byte sizes according to the .txt file specification
-        let tile_id = reader.read_u8();
-        let modifier = reader.read_u8();
-
-        tiles.push(Tile { tile_id, modifier });
-    }
-
-    // 4. Read Entities
-    let entity_count = reader.read_u32::<LittleEndian>()?;
-    let mut entities = Vec::with_capacity(entity_count as usize);
-
-    for _ in 0..entity_count {
-        let entity_type = reader.read_u8()?;
-        let x = reader.read_u32::<LittleEndian>()?;
-        let y = reader.read_u32::<LittleEndian>()?;
-
-        // Often entities in CS2D have a fixed or variable amount of attribute parameters (like trigger IDs, target IDs, etc.)
-        let attr_count = reader.read_u8()?;
-        let mut attributes = Vec::with_capacity(attr_count as usize);
-        for _ in 0..attr_count {
-            attributes.push(reader.read_i32::<LittleEndian>()?);
-        }
-
-        // If entities contain strings (like Lua script names or target names),
-        // you would read the string length, then the string bytes here.
-
-        entities.push(Entity::new(entity_type, x, y, attributes));
-    }
-    */
 }

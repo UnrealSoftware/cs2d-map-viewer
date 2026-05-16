@@ -51,10 +51,6 @@ async fn main() {
     let render_target = render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32);
     //render_target.texture.set_filter(FilterMode::Nearest);
 
-    map.tile_texture = Some(load_texture("assets/default_dust.png").await.unwrap());
-    map.tiles_per_row = (map.tile_texture.as_ref().unwrap().width() / TILE_SIZE) as u8;
-    //spritesheet.set_filter(FilterMode::Nearest);
-
     //let mut audio = AudioPlayer::new();
     //audio.play_file("assets/unrealsoftware.wav", 0.5, [-50.0, 0.0], true);
 
@@ -80,15 +76,12 @@ async fn main() {
         let cam = Camera2D {
             render_target: Some(render_target.clone()),
             target: vec2(world_target.x.floor(), world_target.y.floor()),
-            zoom: vec2(2.0 / GAME_WIDTH, 2.0 / GAME_HEIGHT),
+            zoom: vec2(2.0 / GAME_WIDTH, -2.0 / GAME_HEIGHT),
             ..Default::default()
         };
         set_camera(&cam);
 
-        map.background.draw(delta);
-
-        clear_background(Color::new(0.1, 0.1, 0.1, 1.0));
-
+        map.background.draw(&cam, delta);
         map.draw(&assets, 0);
         map.draw_shadows(&assets);
 
@@ -108,6 +101,7 @@ async fn main() {
             x, y, WHITE,
             DrawTextureParams {
                 dest_size: Some(vec2(w, h)),
+                flip_y: true,
                 ..Default::default()
             },
         );
