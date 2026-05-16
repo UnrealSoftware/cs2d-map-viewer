@@ -1,6 +1,11 @@
+use strum::FromRepr;
+
 /// Defines how a tile behaves and is rendered
+#[derive(Debug, Clone, Default, FromRepr)]
+#[repr(u8)]
 enum TileMode {
     // Normal floor without any sound/fx
+    #[default]
     Normal = 0,
 
     // Walls and obstacles
@@ -24,4 +29,10 @@ enum TileMode {
     DeadlyToxic = 51,
     DeadlyExplosion = 52,
     DeadlyAbyss = 53,
+}
+
+impl From<u8> for TileMode {
+    fn from(v: u8) -> Self {
+        Self::from_repr(v).unwrap_or_default()
+    }
 }

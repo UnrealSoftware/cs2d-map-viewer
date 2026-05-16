@@ -39,33 +39,3 @@ impl Materials {
         }
     }
 }
-
-const VERTEX: &str = r#"#version 100
-attribute vec3 position;
-attribute vec2 texcoord;
-attribute vec4 color0;
-
-varying lowp vec2 uv;
-varying lowp vec4 color;
-
-uniform mat4 Model;
-uniform mat4 Projection;
-
-void main() {
-    gl_Position = Projection * Model * vec4(position, 1);
-    uv = texcoord;
-    color = color0 / 255.0;
-}
-"#;
-
-const FRAGMENT: &str = r#"#version 100
-varying lowp vec2 uv;
-varying lowp vec4 color;
-
-uniform sampler2D Texture;
-
-void main() {
-    lowp vec4 tex = texture2D(Texture, uv);
-    gl_FragColor = vec4(color.r, color.g, color.b, tex.r * color.a);
-}
-"#;

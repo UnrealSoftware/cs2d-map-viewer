@@ -1,14 +1,11 @@
-use std::time::Instant;
 use macroquad::prelude::*;
 
 mod audio;
-mod tile_modes;
 mod util;
 mod map;
 mod assets;
 mod materials;
 
-use audio::AudioPlayer;
 use crate::map::map::Map;
 use crate::map::reader::read_map_file;
 
@@ -36,6 +33,9 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+
+    info!("Query Params: '{}'", util::query::get_query_params());
+
     let mut world_target = vec2(
         MAP_WIDTH as f32 * TILE_SIZE / 2.0,
         MAP_HEIGHT as f32 * TILE_SIZE / 2.0
@@ -43,11 +43,8 @@ async fn main() {
 
     let assets = assets::Assets::load().await;
 
-    let start = Instant::now();
     let mut map = Map::default();
     read_map_file("assets/maps/de_dust2.map", &mut map).await.unwrap();
-    let elapsed = start.elapsed();
-    println!("Elapsed: {:?}", elapsed);
 
     let render_target = render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32);
     //render_target.texture.set_filter(FilterMode::Nearest);

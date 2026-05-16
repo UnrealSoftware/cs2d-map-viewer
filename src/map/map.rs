@@ -5,6 +5,7 @@ use crate::map::background::MapBackground;
 use crate::map::entity::Entity;
 use crate::map::tile::Tile;
 use crate::map::tile_modifiers::TileModifiers;
+use crate::map::entity_type::EntityType;
 use crate::util::recti::RectI;
 use crate::TILE_SIZE;
 
@@ -140,7 +141,7 @@ impl Map {
         };
 
         // Update modes
-        if (modes) {
+        if modes {
             for x in 0..self.size.x {
                 for y in 0..self.size.y {
                     let idx = (y * self.size.x + x) as usize;
@@ -152,7 +153,7 @@ impl Map {
         }
 
         // Update shadows
-        if (shadows) {
+        if shadows {
             for x in 0..self.size.x {
                 for y in 0..self.size.y {
                     let idx = (y * self.size.x + x) as usize;
@@ -222,10 +223,50 @@ impl Map {
             }
         }
 
-
         // Update entities
         if (entities) {
-            //todo
+            for x in 0..self.size.x {
+                for y in 0..self.size.y {
+                    self.entity_areas[(y * self.size.x + x) as usize] = 0;
+                }
+            }
+
+            for entity in &self.entities {
+
+                match entity.entity_type {
+                    EntityType::InfoTeamGate => {},
+                    EntityType::EnvHurt => {}
+                    _ => {} // area check todo
+                }
+            }
         }
+    }
+
+    pub fn is_in_bounds(&self, position: IVec2) -> bool {
+        return position.x >= 0 &&
+            position.y >= 0 &&
+            position.x < self.size.x as i32 &&
+            position.y < self.size.y as i32;
+    }
+
+    pub fn get_entity(&self, index: usize) -> Option<&Entity> {
+        if index < self.entities.len() {
+            return Some(&self.entities[index]);
+        }
+        None
+    }
+
+    pub fn get_entity_at_position(&self, position: IVec2) -> Option<&Entity> {
+        for entity in &self.entities {
+            if entity.position == position {
+                return Some(&entity);
+            }
+        }
+        None
+    }
+
+    pub fn get_entities_with_name<'a>(&'a self, name: &str, result: &mut Vec<&'a Entity>) {
+        result.clear();
+        result.extend(self.entities.iter().filter(|e| e.name == name));
     }
 }

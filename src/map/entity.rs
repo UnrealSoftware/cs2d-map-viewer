@@ -1,19 +1,43 @@
-#[derive(Debug, Clone)]
+use macroquad::prelude::*;
+use crate::map::entity_type::EntityType;
+
+#[derive(Debug, Clone, Default)]
 pub struct Entity {
-    pub entity_type: u8,
-    pub x: u32,
-    pub y: u32,
-    pub attributes: Vec<i32>,
-    // Add other properties defined in the format here (e.g., strings, triggers)
+    // Main Data
+    pub entity_type: EntityType,
+    pub position: IVec2,
+    pub state: u8,
+    pub name: String,
+    pub trigger: String,
+
+    // Values
+    pub ints: [i32; 10],
+    pub strings: [String; 10],
+
+    // Reource
+    // todo
+
+    pub rotation: f32,
+    pub audio_id: u32,
+    pub timer: f32,
+    pub ai: i32,
+
+    // todo light engine
+
+
 }
 
 impl Entity {
-    pub fn new(entity_type: u8, x: u32, y: u32, attributes: Vec<i32>) -> Self {
+    pub fn new(entity_type: EntityType, position: IVec2, name: String, trigger: String, ints: [i32; 10], strings: [String; 10]) -> Self {
         Self {
             entity_type,
-            x,
-            y,
-            attributes,
+            position,
+            state: 0,
+            name,
+            trigger,
+            ints,
+            strings,
+            ..Default::default()
         }
     }
 }

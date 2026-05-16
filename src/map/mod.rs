@@ -5,3 +5,5 @@ mod background;
 mod header;
 mod tile;
 mod tile_modifiers;
+mod tile_modes;
+mod entity_type;

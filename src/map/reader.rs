@@ -1,10 +1,11 @@
 use std::io;
 use std::io::{Cursor, Read};
 use byteorder::{LittleEndian, ReadBytesExt};
-use macroquad::file::load_file;
-use macroquad::math::U16Vec2;
+use macroquad::prelude::*;
 use crate::map::map::Map;
 use crate::map::tile::Tile;
+use crate::map::entity::Entity;
+use crate::map::entity_type::EntityType;
 use crate::map::tile_modifiers::TileModifiers;
 use crate::util::io::read_string;
 use crate::util::rgb::Rgb;
@@ -116,6 +117,7 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
     map.tiles = vec![Tile::default(); size];
     map.modifiers = vec![TileModifiers::default(); size];
     map.shadows = vec![0; size];
+    map.entity_areas = vec![0; size];
 
     for x in 0..width {
         for y in 0..height {
@@ -157,17 +159,31 @@ pub fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::
 
     // --- (5) ENTITIES
     let entity_count = reader.read_i32::<E>()?;
-    for _ in 0..entity_count {
+    map.entities = vec![Entity::default(); entity_count as usize];
+    for i in 0..entity_count {
         let entity_name = read_string(&mut reader)?;
         let entity_type = reader.read_u8()?;
         let entity_x = reader.read_i32::<E>()?;
         let entity_y = reader.read_i32::<E>()?;
         let entity_triggers = read_string(&mut reader)?;
 
+        let mut ints: [i32; 10] = Default::default();
+        let mut strings: [String; 10] = Default::default();
         for i in 0..10 {
             let entity_int = reader.read_i32::<E>()?;
             let entity_str = read_string(&mut reader)?;
+            ints[i] = entity_int;
+            strings[i] = entity_str;
         }
+
+        map.entities[i as usize] = Entity::new(
+            EntityType::from(entity_type),
+            IVec2::new(entity_x, entity_y),
+            entity_name,
+            entity_triggers,
+            ints,
+            strings
+        );
     }
 
     // --- (6) END OF FILE
