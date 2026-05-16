@@ -7,6 +7,7 @@ use crate::map::tile::Tile;
 use crate::map::tile_modifiers::TileModifiers;
 use crate::map::entity_type::EntityType;
 use crate::util::recti::RectI;
+use crate::util::texture_sheet::TextureSheet;
 use crate::TILE_SIZE;
 
 #[derive(Debug, Default)]
@@ -24,9 +25,7 @@ pub struct Map {
 
     pub entities: Vec<Entity>,
 
-    pub tile_texture: Option<Texture2D>,
-    pub tiles_per_row: u8,
-
+    pub tile_texture: Option<TextureSheet>,
     pub tile_modes: Vec<u8>,
     pub tile_heights: Vec<u16>,
     pub tile_3d_modifiers: Vec<u8>,
@@ -44,9 +43,6 @@ impl Map {
 
                 let idx = (y * self.size.x + x) as usize;
                 let tile = self.tiles[idx];
-                let tile_index = tile.frame;
-                let tile_x = tile_index % self.tiles_per_row;
-                let tile_y = tile_index / self.tiles_per_row;
 
                 let mut rot = 0.0;
                 let mut color = WHITE;
@@ -80,6 +76,9 @@ impl Map {
                     }
                 }
 
+                &tex.draw(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE, tile.frame as u16, color, rot);
+
+                /*
                 draw_texture_ex(
                     &tex,
                     x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
@@ -95,37 +94,25 @@ impl Map {
                         ..Default::default()
                     }
                 );
+                 */
             }
         }
     }
 
     pub fn draw_shadows(&mut self, assets: &Assets) {
         gl_use_material(&assets.materials.grayscale_to_alpha);
-        let tiles_per_row = (assets.shadow_texture.width() / 32.0) as u8;
 
         for y in 0..self.size.y {
             for x in 0..self.size.x {
                 let idx = (y * self.size.x + x) as usize;
-                let shadow_index = self.shadows[idx];
+                let shadow_frame = self.shadows[idx];
+                if shadow_frame == 255 { continue; }
 
-                if shadow_index == 255 { continue; }
-
-                let shadow_x = shadow_index % tiles_per_row;
-                let shadow_y = shadow_index / tiles_per_row;
-
-                draw_texture_ex(
-                    &assets.shadow_texture,
+                &assets.shadow_sheet.draw(
                     x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
+                    shadow_frame as u16,
                     Color::new(0.0, 0.0, 0.0, 0.3),
-                    DrawTextureParams {
-                        source: Option::from(Rect {
-                            x: shadow_x as f32 * TILE_SIZE,
-                            y: shadow_y as f32 * TILE_SIZE,
-                            w: TILE_SIZE,
-                            h: TILE_SIZE
-                        }),
-                        ..Default::default()
-                    }
+                    0.0
                 );
             }
         }

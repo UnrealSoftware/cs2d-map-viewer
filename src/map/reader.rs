@@ -10,6 +10,7 @@ use crate::map::tile_modifiers::TileModifiers;
 use crate::TILE_SIZE;
 use crate::util::io::read_string;
 use crate::util::rgb::Rgb;
+use crate::util::texture_sheet::TextureSheet;
 
 pub async fn read_map_file(path: &str, map: &mut Map ) -> io::Result<()> {
     let bytes = load_file(path).await.unwrap();
@@ -82,9 +83,8 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -
 
     let mut tile_path = String::from("assets/gfx/tiles/");
     tile_path.push_str(&tileset_filename);
-    println!("Tileset: {}", tile_path);
-    map.tile_texture = Some(load_texture(&tile_path).await.unwrap());
-    map.tiles_per_row = (map.tile_texture.as_ref().unwrap().width() / TILE_SIZE) as u8;
+    let tex = load_texture(&tile_path).await.unwrap();
+    map.tile_texture = Option::from(TextureSheet::new(tex, IVec2::new(TILE_SIZE as i32, TILE_SIZE as i32)));
 
     if !bg_filename.is_empty() {
         let mut bg_path = String::from("assets/gfx/backgrounds/");
