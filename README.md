@@ -27,3 +27,8 @@ Missing:
 - Previewing CS2D maps on the web is nice. Plan is to embed this into the CS2D file archive at www.unrealsoftware.de
 - Providing an open source example for loading and rendering CS2D maps
 - Evaluating a new tech stack
+
+## License
+The source code of this project is licensed under the [MIT License](LICENSE).
+
+**Crucial Exception:** All media assets (including images, logos, sounds, and music) are **All Rights Reserved** and are explicitly excluded from the MIT License. You may not reuse, redistribute, or modify these assets without written permission.
