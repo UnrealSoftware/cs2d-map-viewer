@@ -6,6 +6,7 @@ use crate::map::entity::Entity;
 use crate::map::tile::Tile;
 use crate::map::tile_modifiers::TileModifiers;
 use crate::map::entity_type::EntityType;
+use crate::map::tile_mode::TileMode;
 use crate::util::recti::RectI;
 use crate::util::texture_sheet::TextureSheet;
 use crate::TILE_SIZE;
@@ -26,7 +27,7 @@ pub struct Map {
     pub entities: Vec<Entity>,
 
     pub tile_texture: Option<TextureSheet>,
-    pub tile_modes: Vec<u8>,
+    pub tile_modes: Vec<TileMode>,
     pub tile_heights: Vec<u16>,
     pub tile_3d_modifiers: Vec<u8>,
 }
@@ -43,7 +44,7 @@ impl Map {
             for x in 0..self.size.x {
 
                 let idx = (y * self.size.x + x) as usize;
-                let tile = self.tiles[idx];
+                let tile = &self.tiles[idx];
 
                 let mut rot = 0.0;
                 let mut color = WHITE;
@@ -124,27 +125,30 @@ impl Map {
 
         // Update shadows
         if shadows {
+            const NORMAL: TileMode = TileMode::Normal;
+            const WALL: TileMode = TileMode::Wall;
+            const OBSTACLE: TileMode = TileMode::Obstacle;
             for x in 0..self.size.x {
                 for y in 0..self.size.y {
                     let idx = (y * self.size.x + x) as usize;
                     self.shadows[idx] = 255;
                     if x > 0 && y > 0 {
                         let mode = self.tiles[idx].mode;
-                        if mode == 1 || mode == 2 || mode == 0 {
+                        if mode == WALL || mode == OBSTACLE || mode == NORMAL {
                             // no shadow
                         } else {
                             // x shadow
                             let idx_left = (y * self.size.x + x - 1) as usize;
-                            if self.tiles[idx_left].mode == 1 { self.shadows[idx] = 6 }
-                            if self.tiles[idx_left].mode == 2 { self.shadows[idx] = 7 }
+                            if self.tiles[idx_left].mode == WALL { self.shadows[idx] = 6 }
+                            if self.tiles[idx_left].mode == OBSTACLE { self.shadows[idx] = 7 }
 
                             // y shadow
                             let idx_top = ((y - 1) * self.size.x + x) as usize;
-                            if self.tiles[idx_top].mode == 1 {
+                            if self.tiles[idx_top].mode == WALL {
                                 if self.shadows[idx] == 255 { self.shadows[idx] = 0 }
                                 if self.shadows[idx] == 6 { self.shadows[idx] = 10 }
                                 if self.shadows[idx] == 7 { self.shadows[idx] = 11 }
-                            } else if self.tiles[idx_top].mode == 2 {
+                            } else if self.tiles[idx_top].mode == OBSTACLE {
                                 if self.shadows[idx] == 255 { self.shadows[idx] = 1 }
                                 if self.shadows[idx] == 6 { self.shadows[idx] = 12 }
                                 if self.shadows[idx] == 7 { self.shadows[idx] = 13 }
@@ -154,14 +158,14 @@ impl Map {
 
                             // shadow edges
                             if self.shadows[idx] == 255 {
-                                if self.tiles[idx_topleft].mode == 1 { self.shadows[idx] = 4 }
-                                if self.tiles[idx_topleft].mode == 2 { self.shadows[idx] = 5 }
+                                if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 4 }
+                                if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 5 }
                             }
 
                             // round off x edges
                             if self.shadows[idx] == 0 || self.shadows[idx] == 1 {
                                 let mode = self.tiles[idx_topleft].mode;
-                                if mode != 1 && mode != 2 {
+                                if mode != WALL && mode != OBSTACLE {
                                     self.shadows[idx] += 2;
                                 }
                             }
@@ -169,23 +173,23 @@ impl Map {
                             // round off y edges
                             if self.shadows[idx] == 6 || self.shadows[idx] == 7 {
                                 let mode = self.tiles[idx_topleft].mode;
-                                if mode != 1 && mode != 2 {
+                                if mode != WALL && mode != OBSTACLE {
                                     self.shadows[idx] += 2;
                                 }
                             }
 
                             // x edge mixed
                             if self.shadows[idx] == 0 {
-                                if self.tiles[idx_topleft].mode == 2 { self.shadows[idx] = 16 }
+                                if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 16 }
                             } else if self.shadows[idx] == 1 {
-                                if self.tiles[idx_topleft].mode == 1 { self.shadows[idx] = 17 }
+                                if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 17 }
                             }
 
                             // y edge mixed
                             if self.shadows[idx] == 6 {
-                                if self.tiles[idx_topleft].mode == 2 { self.shadows[idx] = 14 }
+                                if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 14 }
                             } else if self.shadows[idx] == 7 {
-                                if self.tiles[idx_topleft].mode == 1 { self.shadows[idx] = 15 }
+                                if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 15 }
                             }
                         }
                     }
@@ -204,8 +208,14 @@ impl Map {
             for entity in &self.entities {
 
                 match entity.entity_type {
-                    EntityType::InfoTeamGate => {},
-                    EntityType::EnvHurt => {}
+                    EntityType::InfoTeamGate => Self::set_entity_area(
+                        &self.size, &mut self.entity_areas,
+                        entity.position.x, entity.position.y,
+                        entity.position.x + entity.ints[0], entity.position.y + entity.ints[1]),
+                    EntityType::EnvHurt => Self::set_entity_area(
+                        &self.size, &mut self.entity_areas,
+                        entity.position.x, entity.position.y,
+                        entity.position.x + entity.ints[2], entity.position.y + entity.ints[3]),
                     _ => {} // area check todo
                 }
             }
@@ -238,5 +248,18 @@ impl Map {
     pub fn get_entities_with_name<'a>(&'a self, name: &str, result: &mut Vec<&'a Entity>) {
         result.clear();
         result.extend(self.entities.iter().filter(|e| e.name == name));
+    }
+
+    fn set_entity_area(size: &U16Vec2, areas: &mut Vec<u8>, mut start_x:i32, mut start_y:i32, mut end_x:i32, mut end_y:i32) {
+        if start_x < 0  { start_x = 0 }
+        if start_y < 0  { start_y = 0 }
+        if end_x > size.x as i32 { end_x = size.x as i32 }
+        if end_y > size.y as i32 { end_y = size.y as i32 }
+        for x in start_x..end_x {
+            for y in start_y..end_y {
+                let idx = (y as u16 * size.x + x as u16) as usize;
+                areas[idx] = 1;
+            }
+        }
     }
 }
