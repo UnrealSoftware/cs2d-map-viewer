@@ -1,5 +1,5 @@
 #[derive(Debug, Default)]
 pub struct MapHeader {
-    has_modifiers : bool,
-    use_64_pixel_tiles : bool,
+    pub has_modifiers : bool,
+    pub use_64_pixel_tiles : bool,
 }

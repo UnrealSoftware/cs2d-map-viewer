@@ -49,7 +49,7 @@ impl Map {
                 let mut color = WHITE;
                 let modifier = tile.modifier;
 
-                if (modifier > 0) {
+                if modifier > 0 {
                     // Rotation: Bit 1 & 2
                     if (modifier & 1) == 1 {
                         rot += RAD90;
@@ -194,7 +194,7 @@ impl Map {
         }
 
         // Update entities
-        if (entities) {
+        if entities {
             for x in 0..self.size.x {
                 for y in 0..self.size.y {
                     self.entity_areas[(y * self.size.x + x) as usize] = 0;

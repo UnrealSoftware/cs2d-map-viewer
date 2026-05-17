@@ -36,15 +36,17 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
 
     // 10 bytes for map settings / info
     let scroll_map_like_tiles = reader.read_u8()?;
-    let use_tile_modifiers = reader.read_u8()? == 1;
+    let use_tile_modifiers = reader.read_u8()? > 0;
     let save_tile_heights = reader.read_u8()?;
-    let use_64_pixel_tiles = reader.read_u8()?;
+    let use_64_pixel_tiles = reader.read_u8()? > 0;
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
+    map.header.has_modifiers = use_tile_modifiers;
+    map.header.use_64_pixel_tiles = use_64_pixel_tiles;
 
     // 10 ints for map settings / info
     let uptime_ms = reader.read_i32::<E>()?;
