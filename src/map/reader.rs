@@ -196,7 +196,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
             strings[i] = entity_str;
         }
 
-        map.entities[i as usize] = Entity::new(
+        let mut entity = Entity::new(
             EntityType::from(entity_type),
             IVec2::new(entity_x, entity_y),
             entity_name,
@@ -204,6 +204,9 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
             ints,
             strings
         );
+
+        entity.setup(assets).await;
+        map.entities[i as usize] = entity;
     }
 
     // --- (6) END OF FILE

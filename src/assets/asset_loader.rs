@@ -47,6 +47,7 @@ impl AssetLoader {
 
     /// Load file from loaded zip data or file system
     pub async fn load_file(&self, path: &str) -> Result<Vec<u8>, String> {
+        info!("Loading file {}", path);
         if let Some(bytes) = self.get_bytes_from_zip(path) {
             return Ok(bytes.to_vec());
         }
@@ -58,6 +59,7 @@ impl AssetLoader {
 
     /// Load texture from loaded zip data or file system
     pub async fn load_texture(&self, path: &str) -> Result<Texture2D, String> {
+        info!("Loading texture {}", path);
         if let Some(bytes) = self.get_bytes_from_zip(path) {
             return Ok(Texture2D::from_file_with_format(&bytes, None));
         }

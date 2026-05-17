@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.4"
+image = { version = "0.24", default-features = false, features = ["bmp"] } # required for bmp support
 byteorder = "1.5"
 strum = { version = "0.28", features = ["derive"] }
 zip = { version = "8.6", default-features = false, features = ["deflate"] }

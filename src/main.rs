@@ -5,6 +5,10 @@ use crate::map::map::Map;
 use crate::map::reader::read_map_file;
 use crate::paths::{PATH_MAPS};
 
+// fake use of image lib to support bmp without marking lib as unused
+#[allow(unused_imports)]
+use image as _;
+
 mod audio;
 mod util;
 mod map;
@@ -91,6 +95,7 @@ async fn main() {
         map.background.draw(&cam, delta);
         map.draw(&assets, 0);
         map.draw_shadows(&assets);
+        map.draw_entities(&assets);
 
         // UI
 

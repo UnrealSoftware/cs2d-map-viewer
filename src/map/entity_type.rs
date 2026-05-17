@@ -10,7 +10,7 @@ use strum::FromRepr;
 /// Gen = generator, e.g., particles
 /// Func = functional, performs an action when triggered
 /// Trigger = triggers other entities under certain conditions
-#[derive(Debug, Clone, Default, FromRepr)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, FromRepr)]
 #[repr(u8)]
 pub enum EntityType {
     // Info
@@ -245,7 +245,7 @@ impl EntityType {
     }
 
     #[inline]
-    pub fn get_area(&self) -> u8 {
+    pub fn get_area(&self) -> i32 {
         match self {
             EntityType::InfoT | EntityType::InfoCT | EntityType::InfoBombSpot => 2,
             EntityType::InfoRescuePoint => 1,

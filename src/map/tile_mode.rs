@@ -40,7 +40,7 @@ impl From<u8> for TileMode {
 }
 
 impl TileMode {
-    #[inline]
+    #[inline(always)]
     pub fn get_render_level(&self) -> u8 {
         match self {
             TileMode::Wall | TileMode::WallWithoutShadow => 3,
@@ -50,7 +50,7 @@ impl TileMode {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_walkability(&self) -> TileWalkability {
         match self {
             TileMode::Wall | TileMode::WallWithoutShadow | TileMode::WallAtFloor => TileWalkability::Wall,

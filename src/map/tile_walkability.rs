@@ -10,12 +10,12 @@ pub enum TileWalkability {
 }
 
 impl TileWalkability {
-    #[inline]
+    #[inline(always)]
     pub const fn is_passable(&self) -> bool {
         matches!(self, Self::Walkable | Self::Deadly)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn blocks_vision(&self) -> bool {
         matches!(self, Self::Wall)
     }

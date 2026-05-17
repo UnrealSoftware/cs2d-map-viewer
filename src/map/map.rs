@@ -104,6 +104,12 @@ impl Map {
         gl_use_default_material();
     }
 
+    pub fn draw_entities(&self, assets: &Assets) {
+        for entity in &self.entities {
+            entity.draw(assets);
+        }
+    }
+
     pub fn map_update(&mut self, modes: bool, shadows: bool, entities: bool, area : Option<RectI>) {
         let a: RectI = if area.is_none() {
             RectI::new(0, 0, self.size.x as i32, self.size.y as i32)
@@ -113,9 +119,9 @@ impl Map {
 
         // Update modes
         if modes {
-            for x in 0..self.size.x {
-                for y in 0..self.size.y {
-                    let idx = (y * self.size.x + x) as usize;
+            for x in a.x..a.x + a.width {
+                for y in a.y..a.y + a. height {
+                    let idx = (y * self.size.x as i32 + x) as usize;
                     let frame = self.tiles[idx].frame;
                     let mode = self.tile_modes[frame as usize];
                     self.tiles[idx].mode = mode;
@@ -199,14 +205,12 @@ impl Map {
 
         // Update entities
         if entities {
-            for x in 0..self.size.x {
-                for y in 0..self.size.y {
-                    self.entity_areas[(y * self.size.x + x) as usize] = 0;
-                }
+            for i in 0..self.entity_areas.len() {
+                self.entity_areas[i] = 0;
             }
+            let mut teleporters = 0;
 
             for entity in &self.entities {
-
                 match entity.entity_type {
                     EntityType::InfoTeamGate => Self::set_entity_area(
                         &self.size, &mut self.entity_areas,
@@ -216,9 +220,64 @@ impl Map {
                         &self.size, &mut self.entity_areas,
                         entity.position.x, entity.position.y,
                         entity.position.x + entity.ints[2], entity.position.y + entity.ints[3]),
-                    _ => {} // area check todo
+                    _ => {
+                        let area_size = entity.entity_type.get_area();
+                        if area_size == 0 {
+                            if self.is_in_bounds(entity.position) {
+                                let idx = (entity.position.y * self.size.x as i32 + entity.position.x) as usize;
+                                self.entity_areas[idx] = 1;
+                            }
+                        } else {
+                            Self::set_entity_area(
+                                &self.size, &mut self.entity_areas,
+                                entity.position.x - area_size, entity.position.y - area_size,
+                                entity.position.x + area_size, entity.position.y + area_size);
+                        }
+                    }
+                }
+                match entity.entity_type {
+                    EntityType::EnvBreakable => if self.is_in_bounds(entity.position) {
+                            let idx = (entity.position.y * self.size.x as i32 + entity.position.x) as usize;
+                            self.tiles[idx].mode = match entity.ints[6] {
+                                1 => TileMode::Wall,
+                                2 => TileMode::Normal,
+                                3 => TileMode::Obstacle,
+                                _ => TileMode::Wall
+                            }
+                        }
+                    EntityType::FuncTeleport => { teleporters += 1; }
+                    EntityType::FuncDynamicWall =>
+                        if entity.state == 0 && self.is_in_bounds(entity.position) {
+                            let idx = (entity.position.y * self.size.x as i32 + entity.position.x) as usize;
+                            self.tiles[idx].mode = match entity.ints[1] {
+                                0 => TileMode::Wall,
+                                1 => TileMode::Obstacle,
+                                2 => TileMode::WallWithoutShadow,
+                                3 => TileMode::ObstacleWithoutShadow,
+                                4 => if entity.ints[0] >= 0 && (entity.ints[0] as usize) < self.tile_modes.len() {
+                                        self.tile_modes[entity.ints[0] as usize]
+                                    } else {
+                                        TileMode::Wall
+                                    }
+                                _ => TileMode::Wall
+                            }
+                        }
+                    _ => {}
                 }
             }
+
+            // Teleporter Exits
+            if teleporters > 0 {
+                for entity in &self.entities {
+                    if entity.entity_type == EntityType::FuncTeleport && self.is_in_bounds(entity.position) {
+                        let idx = (entity.position.y * self.size.x as i32 + entity.position.x) as usize;
+                        self.entity_areas[idx] = 2;
+                    }
+                }
+            }
+
+            // Dynamic Objects
+            //todo
         }
     }
 

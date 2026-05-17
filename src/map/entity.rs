@@ -1,5 +1,8 @@
 use macroquad::prelude::*;
+use crate::assets::assets::Assets;
+use crate::assets::asset_id::AssetId;
 use crate::map::entity_type::EntityType;
+use crate::TILE_SIZE;
 
 #[derive(Debug, Clone, Default)]
 pub struct Entity {
@@ -14,8 +17,8 @@ pub struct Entity {
     pub ints: [i32; 10],
     pub strings: [String; 10],
 
-    // Reource
-    // todo
+    // Asset
+    pub asset_id: Option<AssetId>,
 
     pub rotation: f32,
     pub audio_id: u32,
@@ -23,8 +26,6 @@ pub struct Entity {
     pub ai: i32,
 
     // todo light engine
-
-
 }
 
 impl Entity {
@@ -38,6 +39,92 @@ impl Entity {
             ints,
             strings,
             ..Default::default()
+        }
+    }
+
+    pub async fn setup(&mut self, assets: &mut Assets) {
+        match self.entity_type {
+            EntityType::EnvSprite => {
+                let path = self.strings[0].as_str();
+                let asset = assets.load_texture(path).await;
+                self.asset_id = Some(asset.id);
+            }
+            EntityType::EnvSound => {
+                let path = self.strings[0].as_str();
+                assets.load_sound(path).await;
+                let asset = assets.load_texture(path).await;
+                self.asset_id = Some(asset.id);
+            }
+            EntityType::EnvDecal => {
+
+            }
+            EntityType::EnvImage => {
+
+            }
+            _ => {}
+        }
+    }
+
+    pub fn draw(&self, assets: &Assets) {
+        match self.entity_type {
+            EntityType::EnvSprite => {
+                if /* self.state == 0 ||*/ self.strings[0].len() == 0 || self.asset_id.is_none() {
+                    return
+                }
+
+                let idx: usize = self.asset_id.unwrap().into();
+                let asset = &assets.assets[idx];
+                let tex = asset.texture2d.as_ref().unwrap();
+
+                let size_x = self.ints[0] as f32;
+                let size_y = self.ints[1] as f32;
+                let offset_x = self.ints[2] as f32;
+                let offset_y = self.ints[3] as f32;
+                let rot_degrees = -self.ints[4] as f32;
+
+                let r = self.ints[5] as u8;
+                let g = self.ints[6] as u8;
+                let b = self.ints[7] as u8;
+                let a = (self.strings[1].parse().unwrap_or(1.0) * 255.0) as u8;
+                let col = Color::from_rgba(r, g, b, a);
+
+                let x = self.position.x as f32 * TILE_SIZE + offset_x;
+                let y = self.position.y as f32 * TILE_SIZE + offset_y;
+
+                match self.ints[9] {
+                    3 => {}
+                    4 => {}
+                    _ => {}
+                }
+
+                draw_texture_ex(
+                    &tex,
+                    x,
+                    y,
+                    col,
+                    DrawTextureParams {
+                        dest_size: Some(vec2(size_x, size_y)),
+                        rotation: rot_degrees.to_radians(),
+                        ..Default::default()
+                    },
+                );
+            }
+            EntityType::EnvImage => {
+                if /*self.state == 0 ||*/ self.strings[0].len() == 0 || self.asset_id.is_none() {
+                    return
+                }
+
+                let idx: usize = self.asset_id.unwrap().into();
+                let asset = &assets.assets[idx];
+                let tex = asset.texture2d.as_ref().unwrap();
+
+                let x = self.position.x as f32 * TILE_SIZE;
+                let y = self.position.y as f32 * TILE_SIZE;
+
+                draw_texture(&tex, x, y, WHITE);
+
+            }
+            _ => {}
         }
     }
 }
