@@ -6,11 +6,13 @@ use macroquad::miniquad::{
 #[derive(Debug)]
 pub struct Materials {
     pub grayscale_to_alpha: Material,
+    pub light_blend: Material,
+    pub shade_blend: Material,
 }
 
 impl Materials {
     pub async fn load() -> Self {
-        let grayscale_alpha_material = load_material(
+        let grayscale_to_alpha = load_material(
             ShaderSource::Glsl {
                 vertex: include_str!("shaders/grayscale_to_alpha.vert"),
                 fragment: include_str!("shaders/grayscale_to_alpha.frag"),
@@ -31,11 +33,48 @@ impl Materials {
                 },
                 ..Default::default()
             },
-        )
-            .expect("failed to create shadow material");
+        ).unwrap();
+
+        let light_blend = load_material(
+            ShaderSource::Glsl {
+                vertex: include_str!("shaders/blend.vert"),
+                fragment: include_str!("shaders/blend.frag"),
+            },
+            MaterialParams {
+                pipeline_params: PipelineParams {
+                    color_blend: Some(BlendState::new(
+                        Equation::Add,
+                        BlendFactor::Value(BlendValue::SourceAlpha),
+                        BlendFactor::One,
+                    )),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ).unwrap();
+
+        let shade_blend = load_material(
+            ShaderSource::Glsl {
+                vertex: include_str!("shaders/blend.vert"),
+                fragment: include_str!("shaders/blend.frag"),
+            },
+            MaterialParams {
+                pipeline_params: PipelineParams {
+                    color_blend: Some(BlendState::new(
+                        Equation::Add,
+                        BlendFactor::Value(BlendValue::DestinationColor),
+                        BlendFactor::Zero,
+                    )),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ).unwrap();
 
         Self {
-            grayscale_to_alpha: grayscale_alpha_material
+            grayscale_to_alpha,
+            light_blend,
+            shade_blend,
         }
     }
 }

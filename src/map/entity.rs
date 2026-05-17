@@ -91,9 +91,10 @@ impl Entity {
                 let x = self.position.x as f32 * TILE_SIZE + offset_x;
                 let y = self.position.y as f32 * TILE_SIZE + offset_y;
 
+                let mut custom_mat = false;
                 match self.ints[9] {
-                    3 => {}
-                    4 => {}
+                    3 => { gl_use_material(&assets.materials.light_blend); custom_mat = true; }
+                    4 => { gl_use_material(&assets.materials.shade_blend); custom_mat = true; }
                     _ => {}
                 }
 
@@ -108,6 +109,10 @@ impl Entity {
                         ..Default::default()
                     },
                 );
+
+                if custom_mat {
+                    gl_use_default_material();
+                }
             }
             EntityType::EnvImage => {
                 if /*self.state == 0 ||*/ self.strings[0].len() == 0 || self.asset_id.is_none() {
