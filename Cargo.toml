@@ -8,6 +8,7 @@ macroquad = "0.4"
 byteorder = "1.5"
 strum = { version = "0.28", features = ["derive"] }
 zip = { version = "8.6", default-features = false, features = ["deflate"] }
+const-str = "1.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 kira = "0.12"

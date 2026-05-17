@@ -1,5 +1,5 @@
 use macroquad::prelude::*;
-use crate::assets::Assets;
+use crate::assets::assets::Assets;
 use crate::map::header::MapHeader;
 use crate::map::background::MapBackground;
 use crate::map::entity::Entity;

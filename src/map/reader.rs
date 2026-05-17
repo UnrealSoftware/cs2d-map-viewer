@@ -2,25 +2,27 @@ use std::io;
 use std::io::{Cursor, Read};
 use byteorder::{LittleEndian, ReadBytesExt};
 use macroquad::prelude::*;
+use crate::assets::assets::Assets;
 use crate::map::map::Map;
 use crate::map::tile::Tile;
 use crate::map::entity::Entity;
 use crate::map::entity_type::EntityType;
 use crate::map::tile_modifiers::TileModifiers;
+use crate::paths::{PATH_BACKGROUNDS, PATH_TILES};
 use crate::TILE_SIZE;
 use crate::util::io::read_string;
 use crate::util::rgb::Rgb;
 use crate::util::texture_sheet::TextureSheet;
 
-pub async fn read_map_file(path: &str, map: &mut Map ) -> io::Result<()> {
-    let bytes = load_file(path).await.unwrap();
+pub async fn read_map_file(path: &str, map: &mut Map, assets: &mut Assets) -> io::Result<()> {
+    let bytes = assets.loader.load_file(path).await.unwrap();
     let mut reader = Cursor::new(bytes);
-    read_map_bytes(&mut reader, path, map).await
+    read_map_bytes(&mut reader, path, map, assets).await
 }
 
 /// Reads and parses the binary map format from any `Read` source (like a File)
 /// Specs https://www.unrealsoftware.de/files_pub/cs2d_spec_map_format.txt
-pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -> io::Result<()> {
+pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, assets: &mut Assets) -> io::Result<()> {
     type E = LittleEndian;
 
     // --- (1) HEADER
@@ -81,15 +83,15 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map) -
     let bg_color_g = reader.read_u8()?;
     let bg_color_b = reader.read_u8()?;
 
-    let mut tile_path = String::from("assets/gfx/tiles/");
+    let mut tile_path = String::from(PATH_TILES);
     tile_path.push_str(&tileset_filename);
-    let tex = load_texture(&tile_path).await.unwrap();
+    let tex = assets.loader.load_texture(&tile_path).await.unwrap();
     map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
 
     if !bg_filename.is_empty() {
-        let mut bg_path = String::from("assets/gfx/backgrounds/");
+        let mut bg_path = String::from(PATH_BACKGROUNDS);
         bg_path.push_str(&bg_filename);
-        map.background.texture = Some(load_texture(&bg_path).await.unwrap());
+        map.background.texture = Some(assets.loader.load_texture(&bg_path).await.unwrap());
     }
     map.background.scroll_speed = IVec2::new(bg_scroll_x, bg_scroll_y);
     map.background.color = Color::from_rgba(bg_color_r, bg_color_g, bg_color_b, 255);

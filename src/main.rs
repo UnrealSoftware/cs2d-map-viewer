@@ -1,13 +1,16 @@
 use macroquad::prelude::*;
+use crate::assets::assets::Assets;
+use crate::audio::AudioPlayer;
+use crate::map::map::Map;
+use crate::map::reader::read_map_file;
+use crate::paths::{PATH_MAPS};
 
 mod audio;
 mod util;
 mod map;
 mod assets;
 mod materials;
-
-use crate::map::map::Map;
-use crate::map::reader::read_map_file;
+mod paths;
 
 const TILE_SIZE: f32 = 32.0;
 const MAP_WIDTH: i32 = 50;
@@ -43,16 +46,20 @@ async fn main() {
         MAP_HEIGHT as f32 * TILE_SIZE / 2.0
     );
 
-    let assets = assets::Assets::load().await;
+    let mut assets = Assets::init("assets.zip").await;
 
     let mut map = Map::default();
-    read_map_file("assets/maps/de_dust2.map", &mut map).await.unwrap();
+    let mut map_path = String::from(PATH_MAPS);
+    map_path.push_str("de_dust2.map");
+    read_map_file(&map_path, &mut map, &mut assets).await.unwrap();
 
     let render_target = render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32);
     //render_target.texture.set_filter(FilterMode::Nearest);
 
     //let mut audio = AudioPlayer::new();
-    //audio.play_file("assets/unrealsoftware.wav", 0.5, [-50.0, 0.0], true);
+    //audio.play_file("unrealsoftware.wav", 0.5, [-50.0, 0.0], true);
+    //let mem = load_file("unrealsoftware.wav").await.unwrap();
+    //audio.play_memory(&*mem, 0.5, [-50.0, 0.0], true);
 
     loop {
         let delta = get_frame_time();
