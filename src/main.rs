@@ -92,10 +92,13 @@ async fn main() {
         };
         set_camera(&cam);
 
-        map.background.draw(&cam, delta);
-        map.draw(&assets, 0);
-        map.draw_shadows(&assets);
-        map.draw_entities(&assets);
+        let top_left = cam.screen_to_world(vec2(0.0, 0.0));
+        let rect = Rect::new(top_left.x, top_left.y, GAME_WIDTH, GAME_HEIGHT);
+
+        map.background.draw(delta, rect);
+        map.draw(rect, &assets, 0);
+        map.draw_shadows(rect, &assets);
+        map.draw_entities(delta, rect, &assets);
 
         // UI
 

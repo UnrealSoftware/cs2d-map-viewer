@@ -65,31 +65,50 @@ impl Entity {
         }
     }
 
-    pub fn draw(&self, assets: &Assets) {
+    pub fn draw(&mut self, delta: f32, rect: Rect, assets: &Assets) {
         match self.entity_type {
             EntityType::EnvSprite => {
                 if /* self.state == 0 ||*/ self.strings[0].len() == 0 || self.asset_id.is_none() {
                     return
                 }
 
-                let idx: usize = self.asset_id.unwrap().into();
-                let asset = &assets.assets[idx];
-                let tex = asset.texture2d.as_ref().unwrap();
-
                 let size_x = self.ints[0] as f32;
                 let size_y = self.ints[1] as f32;
                 let offset_x = self.ints[2] as f32;
                 let offset_y = self.ints[3] as f32;
+
+                if self.strings[3] == "0" || self.strings[3] == "" {
+                    self.rotation = (self.ints[4] as f32).to_radians();
+                } else {
+                    let rot_speed:f32 = self.strings[3].parse().unwrap_or(0.0);
+                    self.rotation -= rot_speed.to_radians() * delta;
+                }
+
                 let rot_degrees = -self.ints[4] as f32;
+
+                let x = self.position.x as f32 * TILE_SIZE + offset_x;
+                let y = self.position.y as f32 * TILE_SIZE + offset_y;
+
+                if self.rotation == 0.0 {
+                    if x + size_x < rect.x || y + size_y < rect.y || x > rect.right() || y > rect.bottom() {
+                        return;
+                    }
+                } else {
+                    let size = size_x.max(size_y);
+                    if x + size < rect.x || y + size < rect.y || x - size > rect.right() || y - size > rect.bottom() {
+                        return;
+                    }
+                }
+
+                let idx: usize = self.asset_id.unwrap().into();
+                let asset = &assets.assets[idx];
+                let tex = asset.texture2d.as_ref().unwrap();
 
                 let r = self.ints[5] as u8;
                 let g = self.ints[6] as u8;
                 let b = self.ints[7] as u8;
                 let a = (self.strings[1].parse().unwrap_or(1.0) * 255.0) as u8;
                 let col = Color::from_rgba(r, g, b, a);
-
-                let x = self.position.x as f32 * TILE_SIZE + offset_x;
-                let y = self.position.y as f32 * TILE_SIZE + offset_y;
 
                 let mut custom_mat = false;
                 match self.ints[9] {

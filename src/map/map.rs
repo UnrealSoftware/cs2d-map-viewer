@@ -33,17 +33,21 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn draw(&mut self, assets: &Assets, level: i8) {
+    pub fn draw(&mut self, rect: Rect, assets: &Assets, level: i8) {
         const RAD90: f32 = std::f32::consts::FRAC_PI_2;
         const RAD180: f32 = std::f32::consts::PI;
 
         let tex = self.tile_texture.as_ref().unwrap();
         let size = vec2(TILE_SIZE, TILE_SIZE);
 
-        for y in 0..self.size.y {
-            for x in 0..self.size.x {
+        let start_x = ((rect.x / TILE_SIZE).floor() as usize).max(0);
+        let start_y = ((rect.y / TILE_SIZE).floor() as usize).max(0);
+        let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
+        let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
 
-                let idx = (y * self.size.x + x) as usize;
+        for y in start_y..end_y {
+            for x in start_x..end_x {
+                let idx = y * self.size.x as usize + x;
                 let tile = &self.tiles[idx];
 
                 let mut rot = 0.0;
@@ -84,12 +88,17 @@ impl Map {
         }
     }
 
-    pub fn draw_shadows(&mut self, assets: &Assets) {
+    pub fn draw_shadows(&mut self, rect: Rect, assets: &Assets) {
         gl_use_material(&assets.materials.grayscale_to_alpha);
 
-        for y in 0..self.size.y {
-            for x in 0..self.size.x {
-                let idx = (y * self.size.x + x) as usize;
+        let start_x = ((rect.x / TILE_SIZE).floor() as usize).max(0);
+        let start_y = ((rect.y / TILE_SIZE).floor() as usize).max(0);
+        let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
+        let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
+
+        for y in start_y..end_y {
+            for x in start_x..end_x {
+                let idx = y * self.size.x as usize + x;
                 let shadow_frame = self.shadows[idx];
                 if shadow_frame == 255 { continue; }
 
@@ -104,9 +113,9 @@ impl Map {
         gl_use_default_material();
     }
 
-    pub fn draw_entities(&self, assets: &Assets) {
-        for entity in &self.entities {
-            entity.draw(assets);
+    pub fn draw_entities(&mut self, delta:f32, rect: Rect, assets: &Assets) {
+        for entity in &mut self.entities {
+            entity.draw(delta, rect, assets);
         }
     }
 
