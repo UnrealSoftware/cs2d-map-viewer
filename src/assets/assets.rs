@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use macroquad::prelude::*;
-use macroquad::ui::widgets::Texture;
 use crate::assets::asset::Asset;
 use crate::assets::asset_id::AssetId;
 use crate::assets::asset_loader::AssetLoader;

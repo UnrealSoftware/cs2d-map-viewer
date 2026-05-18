@@ -16,11 +16,7 @@ impl RectI {
         }
     }
 
-    pub fn get_end_x(self) -> i32 {
-        self.x + self.width
-    }
+    pub fn right(self) -> i32 { self.x + self.width }
 
-    pub fn get_end_y(self) -> i32 {
-        self.y + self.height
-    }
+    pub fn bottom(self) -> i32 { self.y + self.height }
 }

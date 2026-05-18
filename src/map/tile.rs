@@ -1,5 +1,4 @@
 use crate::map::tile_mode::TileMode;
-use crate::map::tile_walkability::TileWalkability;
 
 /// A color in RGB (red, green, blue) format, each component 8 bit (0 - 255)
 /// Unlike the Color struct, this one uses u8 and has no alpha component.

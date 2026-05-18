@@ -112,9 +112,16 @@ impl Entity {
 
                 let mut custom_mat = false;
                 match self.ints[9] {
+                    2 => { gl_use_material(&assets.materials.mask_cutoff); custom_mat = true; }
                     3 => { gl_use_material(&assets.materials.light_blend); custom_mat = true; }
                     4 => { gl_use_material(&assets.materials.shade_blend); custom_mat = true; }
-                    _ => {}
+                    6 => { gl_use_material(&assets.materials.lum_to_alpha_white); custom_mat = true; }
+                    _ => {
+                        if self.strings[2] == "4" && a >= 255 {
+                            gl_use_material(&assets.materials.mask_black);
+                            custom_mat = true;
+                        }
+                    }
                 }
 
                 draw_texture_ex(
