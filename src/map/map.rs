@@ -110,7 +110,7 @@ impl Map {
             }
         }
 
-        gl_use_default_material();
+        assets.materials.use_default();
     }
 
     pub fn draw_entities(&mut self, delta:f32, rect: Rect, assets: &Assets) {

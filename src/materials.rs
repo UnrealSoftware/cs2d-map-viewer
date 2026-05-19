@@ -10,7 +10,8 @@ pub struct Materials {
     pub lum_to_alpha_white: Material,
     pub mask_black : Material,
     pub mask_magenta: Material,
-    pub mask_cutoff: Material,
+    pub premultiplied_cutoff: Material,
+    pub premultiplied_alpha: Material,
     pub light_blend: Material,
     pub shade_blend: Material,
 }
@@ -132,19 +133,32 @@ impl Materials {
             },
         ).unwrap();
 
-        let mask_cutoff = load_material(
+        let premultiplied_cutoff = load_material(
             ShaderSource::Glsl {
                 vertex: include_str!("shaders/default.vert"),
-                fragment: include_str!("shaders/mask_cutoff.frag"),
+                fragment: include_str!("shaders/premultiplied_cutoff.frag"),
             },
             MaterialParams {
                 pipeline_params: PipelineParams {
                     color_blend: Some(BlendState::new(
                         Equation::Add,
-                        BlendFactor::Value(BlendValue::SourceAlpha),
+                        BlendFactor::One,
                         BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
                     )),
-                    alpha_blend: Some(BlendState::new(
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ).unwrap();
+
+        let premultiplied_alpha = load_material(
+            ShaderSource::Glsl {
+                vertex: include_str!("shaders/default.vert"),
+                fragment: include_str!("shaders/premultiplied_alpha.frag"),
+            },
+            MaterialParams {
+                pipeline_params: PipelineParams {
+                    color_blend: Some(BlendState::new(
                         Equation::Add,
                         BlendFactor::One,
                         BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
@@ -197,9 +211,16 @@ impl Materials {
             lum_to_alpha_white,
             mask_black,
             mask_magenta,
-            mask_cutoff,
+            premultiplied_cutoff,
+            premultiplied_alpha,
             light_blend,
             shade_blend,
         }
+    }
+
+    /// Use the default material
+    #[inline(always)]
+    pub fn use_default(&self) {
+        gl_use_material(&self.premultiplied_alpha)
     }
 }

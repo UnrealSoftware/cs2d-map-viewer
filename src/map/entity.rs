@@ -112,7 +112,7 @@ impl Entity {
 
                 let mut custom_mat = false;
                 match self.ints[9] {
-                    2 => { gl_use_material(&assets.materials.mask_cutoff); custom_mat = true; }
+                    2 => { gl_use_material(&assets.materials.premultiplied_cutoff); custom_mat = true; }
                     3 => { gl_use_material(&assets.materials.light_blend); custom_mat = true; }
                     4 => { gl_use_material(&assets.materials.shade_blend); custom_mat = true; }
                     6 => { gl_use_material(&assets.materials.lum_to_alpha_white); custom_mat = true; }
@@ -137,7 +137,7 @@ impl Entity {
                 );
 
                 if custom_mat {
-                    gl_use_default_material();
+                    assets.materials.use_default();
                 }
             }
             EntityType::EnvImage => {

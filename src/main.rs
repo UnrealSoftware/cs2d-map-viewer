@@ -84,6 +84,8 @@ async fn main() {
             world_target.y += mouse_delta.y * delta * MOVE_SPEED * 32.0 * screen_scale;
         }
 
+        assets.materials.use_default();
+
         let cam = Camera2D {
             render_target: Some(render_target.clone()),
             target: vec2(world_target.x.floor(), world_target.y.floor()),

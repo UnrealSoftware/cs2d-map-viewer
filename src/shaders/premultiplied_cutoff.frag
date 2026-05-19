@@ -11,5 +11,7 @@ void main() {
         discard;
     }
 
-    gl_FragColor = tex;
+    lowp vec4 final_color = color * tex;
+    final_color.rgb *= final_color.a;
+    gl_FragColor = final_color;
 }
