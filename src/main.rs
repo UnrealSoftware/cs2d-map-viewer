@@ -65,6 +65,8 @@ async fn main() {
     //let mem = load_file("unrealsoftware.wav").await.unwrap();
     //audio.play_memory(&*mem, 0.5, [-50.0, 0.0], true);
 
+    let mut last_mouse = mouse_position();
+
     loop {
         let delta = get_frame_time();
 
@@ -76,12 +78,16 @@ async fn main() {
         if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { world_target.x -= speed; }
         if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { world_target.x += speed; }
 
+        let current_mouse = mouse_position();
+        let mouse_delta_x = current_mouse.0 - last_mouse.0;
+        let mouse_delta_y = current_mouse.1 - last_mouse.1;
+        last_mouse = current_mouse;
+
         let screen_scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
-        let mouse_delta = mouse_delta_position();
 
         if is_mouse_button_down(MouseButton::Left) {
-            world_target.x += mouse_delta.x * delta * MOVE_SPEED * 32.0 * screen_scale;
-            world_target.y += mouse_delta.y * delta * MOVE_SPEED * 32.0 * screen_scale;
+            world_target.x -= mouse_delta_x / screen_scale;
+            world_target.y -= mouse_delta_y / screen_scale;
         }
 
         assets.materials.use_default();
