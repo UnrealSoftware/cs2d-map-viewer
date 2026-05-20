@@ -65,12 +65,28 @@ impl Entity {
         }
     }
 
-    pub fn draw(&mut self, delta: f32, rect: Rect, assets: &Assets) {
+    pub fn draw(&mut self, delta: f32, rect: Rect, assets: &Assets, level: u8) {
         match self.entity_type {
             EntityType::EnvSprite => {
-                if /* self.state == 0 ||*/ self.strings[0].len() == 0 || self.asset_id.is_none() {
+                if /* self.state == 0 ||*/ self.asset_id.is_none() {
                     return
                 }
+
+                if level == 0 {
+                    if self.strings[4].len() == 0 { return; }
+                } else if level == 2 {
+                    if self.strings[4].len() > 0 { return; }
+                } else {
+                    return;
+                }
+
+
+                // todo: skip decoration
+                // if self.strings[8].len() > 0 { return;}
+
+                // todo: skip nightvision
+                //if self.strings[5].len() > 0 { return; }
+
 
                 let size_x = self.ints[0] as f32;
                 let size_y = self.ints[1] as f32;
@@ -141,8 +157,16 @@ impl Entity {
                 }
             }
             EntityType::EnvImage => {
-                if /*self.state == 0 ||*/ self.strings[0].len() == 0 || self.asset_id.is_none() {
+                if /*self.state == 0 ||*/ self.asset_id.is_none() {
                     return
+                }
+
+                if level == 0 {
+                    if self.ints[2] != 0 { return; }
+                } else if level == 2  {
+                    if self.ints[2] != 1 { return; }
+                } else {
+                    return;
                 }
 
                 let idx: usize = self.asset_id.unwrap().into();

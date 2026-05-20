@@ -140,7 +140,7 @@ async fn main() {
 
         // Draw Level 2 - Ground
         map.draw(rect, &assets, 2);
-        // todo: ground level entities
+        map.draw_entities(delta, rect, &assets, 0);
         // todo: particles level 2
         // todo: Tdo.draw_ground
         // todo: Tpro.draw_ground(0)
@@ -150,7 +150,7 @@ async fn main() {
         map.draw(rect, &assets, 3);
         // todo: Tdo.draw_obstacle
         // todo: Tpro.draw_ground(1)
-        // todo: obstalce level entities
+        map.draw_entities(delta, rect, &assets, 1);
         map.draw_shadows(rect, &assets);
         // todo: particles level 3
 
@@ -165,15 +165,13 @@ async fn main() {
         // Draw Level 5 - Walls / Entities
         map.draw(rect, &assets, 4);
         // todo: Tdo.draw_wall
-        // todo: wall level entities
+        map.draw_entities(delta, rect, &assets, 2);
         // todo: Tdo.draw_overwall
         // todo: particles level 5
         // todo: particles level 7 (?!?!)
         // todo: particles level 6
         // todo: smart light layer 2
         // todo: particles level 8
-
-        map.draw_entities(delta, rect, &assets);
 
         // todo: fow
         // todo: night vision overlay

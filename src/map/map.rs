@@ -117,9 +117,9 @@ impl Map {
         assets.materials.use_default();
     }
 
-    pub fn draw_entities(&mut self, delta:f32, rect: Rect, assets: &Assets) {
+    pub fn draw_entities(&mut self, delta:f32, rect: Rect, assets: &Assets, level: u8) {
         for entity in &mut self.entities {
-            entity.draw(delta, rect, assets);
+            entity.draw(delta, rect, assets, level);
         }
     }
 
