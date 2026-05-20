@@ -80,13 +80,11 @@ impl Entity {
                     return;
                 }
 
-
                 // todo: skip decoration
                 // if self.strings[8].len() > 0 { return;}
 
                 // todo: skip nightvision
                 //if self.strings[5].len() > 0 { return; }
-
 
                 let size_x = self.ints[0] as f32;
                 let size_y = self.ints[1] as f32;

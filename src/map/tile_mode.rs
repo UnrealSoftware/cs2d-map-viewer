@@ -43,10 +43,10 @@ impl TileMode {
     #[inline(always)]
     pub fn get_render_level(&self) -> u8 {
         match self {
-            TileMode::Wall | TileMode::WallWithoutShadow => 3,
-            TileMode::Obstacle | TileMode::ObstacleWithoutShadow => 2,
-            TileMode::Wade => 0,
-            _ => 1
+            TileMode::Wall | TileMode::WallWithoutShadow => 4,
+            TileMode::Obstacle | TileMode::ObstacleWithoutShadow => 3,
+            TileMode::Wade => 1,
+            _ => 2
         }
     }
 
