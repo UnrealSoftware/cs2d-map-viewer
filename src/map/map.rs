@@ -33,7 +33,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn draw(&mut self, rect: Rect, assets: &Assets, level: i8) {
+    pub fn draw(&mut self, rect: Rect, assets: &Assets, level: u8) {
         const RAD90: f32 = std::f32::consts::FRAC_PI_2;
         const RAD180: f32 = std::f32::consts::PI;
 
@@ -50,6 +50,10 @@ impl Map {
                 let idx = y * self.size.x as usize + x;
                 let tile = &self.tiles[idx];
 
+                if tile.mode.get_render_level() != level {
+                    continue;
+                }
+                
                 let mut rot = 0.0;
                 let mut color = WHITE;
                 let modifier = tile.modifier;

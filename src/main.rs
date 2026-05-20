@@ -51,14 +51,41 @@ async fn main() {
     );
 
     let mut assets = Assets::init("assets.zip").await;
-
     let mut map = Map::default();
-    let mut map_path = String::from(PATH_MAPS);
-    map_path.push_str("de_dust2.map");
-    read_map_file(&map_path, &mut map, &mut assets).await.unwrap();
+    let mut did_load_map = false;
 
-    let render_target = render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32);
-    //render_target.texture.set_filter(FilterMode::Nearest);
+    let load_file = util::params::get_app_param_string("file", "");
+    let load_file_cid = util::params::get_app_param_string("cid", "");
+    if load_file.len() > 0 && load_file_cid.len() > 0 {
+        let url = "https://www.unrealsoftware.de/get.php?get={f}&p=2&cid={cid}"
+            .replace("{f}", &load_file)
+            .replace("{cid}", &load_file_cid);
+        match assets.loader.load_zip(&url).await {
+           Ok(loaded_files) => {
+               for map_file in loaded_files.iter().filter(|file| file.ends_with(".map")) {
+                   did_load_map = read_map_file(map_file, &mut map, &mut assets).await.is_ok();
+                   break;
+               }
+           }
+           Err(e) => {
+               error!("Failed to load zip '{}': {}", &url, e);
+           }
+       }
+    }
+
+    // Just load de_dust2 if no map could be loaded from zip
+    if !did_load_map {
+        let mut map_path = String::from(PATH_MAPS);
+        map_path.push_str("de_dust2.map");
+        read_map_file(&map_path, &mut map, &mut assets).await.unwrap();
+    }
+
+    let rt: Option<RenderTarget> = if cfg!(feature = "r2tex") {
+        Some(render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32))
+    } else {
+        None
+    };
+    let render_y_base = if cfg!(feature = "r2tex") { -2.0 } else { 2.0 };
 
     //let mut audio = AudioPlayer::new();
     //audio.play_file("unrealsoftware.wav", 0.5, [-50.0, 0.0], true);
@@ -83,9 +110,8 @@ async fn main() {
         let mouse_delta_y = current_mouse.1 - last_mouse.1;
         last_mouse = current_mouse;
 
-        let screen_scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
-
         if is_mouse_button_down(MouseButton::Left) {
+            let screen_scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
             world_target.x -= mouse_delta_x / screen_scale;
             world_target.y -= mouse_delta_y / screen_scale;
         }
@@ -93,9 +119,9 @@ async fn main() {
         assets.materials.use_default();
 
         let cam = Camera2D {
-            render_target: Some(render_target.clone()),
+            render_target: rt.clone(),
             target: vec2(world_target.x.floor(), world_target.y.floor()),
-            zoom: vec2(2.0 / GAME_WIDTH, -2.0 / GAME_HEIGHT),
+            zoom: vec2(2.0 / GAME_WIDTH, render_y_base / GAME_HEIGHT),
             ..Default::default()
         };
         set_camera(&cam);
@@ -103,31 +129,80 @@ async fn main() {
         let top_left = cam.screen_to_world(vec2(0.0, 0.0));
         let rect = Rect::new(top_left.x, top_left.y, GAME_WIDTH, GAME_HEIGHT);
 
+        // Draw Level 0 - Background
         map.background.draw(delta, rect);
-        map.draw(rect, &assets, 0);
+        // todo: particles level 0
+        // todo: Tdo.draw_reset & Tdo.draw_background
+
+        // Draw Level 1 - Water
+        map.draw(rect, &assets, 1);
+        // todo: particles level 1
+
+        // Draw Level 2 - Ground
+        map.draw(rect, &assets, 2);
+        // todo: ground level entities
+        // todo: particles level 2
+        // todo: Tdo.draw_ground
+        // todo: Tpro.draw_ground(0)
+
+        // Draw Level 3 - Items / Obstacles / Shadows
+        // todo: Titem.draw
+        map.draw(rect, &assets, 3);
+        // todo: Tdo.draw_obstacle
+        // todo: Tpro.draw_ground(1)
+        // todo: obstalce level entities
         map.draw_shadows(rect, &assets);
+        // todo: particles level 3
+
+        // Draw Level 4 - Hostages / Players / Flying Projectiles
+        // todo: hostages
+        // todo: players
+        // todo: Tpro.draw_flying
+        // todo: muzzles
+        // todo: tsparkle
+        // todo: particles level 4
+
+        // Draw Level 5 - Walls / Entities
+        map.draw(rect, &assets, 4);
+        // todo: Tdo.draw_wall
+        // todo: wall level entities
+        // todo: Tdo.draw_overwall
+        // todo: particles level 5
+        // todo: particles level 7 (?!?!)
+        // todo: particles level 6
+        // todo: smart light layer 2
+        // todo: particles level 8
+
         map.draw_entities(delta, rect, &assets);
+
+        // todo: fow
+        // todo: night vision overlay
 
         // UI
 
         set_default_camera();
-        clear_background(BLACK);
 
-        let scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
-        let w = GAME_WIDTH * scale;
-        let h = GAME_HEIGHT * scale;
-        let x = (screen_width() - w) / 2.0;
-        let y = (screen_height() - h) / 2.0;
+        if cfg!(feature = "r2tex") {
+            if let Some(target) = &rt {
+                clear_background(BLACK);
 
-        draw_texture_ex(
-            &render_target.texture,
-            x, y, WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(w, h)),
-                flip_y: true,
-                ..Default::default()
-            },
-        );
+                let scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
+                let w = GAME_WIDTH * scale;
+                let h = GAME_HEIGHT * scale;
+                let x = (screen_width() - w) / 2.0;
+                let y = (screen_height() - h) / 2.0;
+
+                draw_texture_ex(
+                    &target.texture,
+                    x, y, WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(vec2(w, h)),
+                        flip_y: true,
+                        ..Default::default()
+                    },
+                );
+            }
+        }
 
         draw_text("Use Arrow Keys to Scroll", 10.0, 10.0, 20.0, WHITE);
 

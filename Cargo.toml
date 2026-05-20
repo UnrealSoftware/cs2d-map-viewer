@@ -15,8 +15,11 @@ const-str = "1.1"
 kira = "0.12"
 
 [profile.release]
-opt-level = "z"      # Optimize strictly for binary size
+opt-level = "z"      # Optimize ("z" = size, "s" = speed)
 lto = true           # Enable Link-Time Optimization (crucial for WASM)
 codegen-units = 1    # Allows LLVM to optimize and inline much better
 panic = "abort"      # Removes panic string formatting and unwinding code
-strip = true         # Automatically strips symbols and debug info (Rust 1.59+)
+strip = true         # Strip symbols
+
+[features]
+r2tex = [] # Render game content to a texture instead of doing a direct render

@@ -21,8 +21,9 @@ impl Assets {
     pub async fn init(base_zip_path: &str) -> Self {
         let mut loader = AssetLoader::new();
         if !base_zip_path.is_empty() {
-            loader.load_zip(base_zip_path).await.
-                unwrap_or_else(|e| error!("{}", e));
+            if let Err(e) = loader.load_zip(base_zip_path).await {
+                error!("Failed to load zip '{}': {}", base_zip_path, e);
+            }
         }
 
         let assets = Vec::new();

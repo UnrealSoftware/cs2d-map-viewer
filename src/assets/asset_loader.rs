@@ -18,14 +18,18 @@ impl AssetLoader {
         self.zip_cache.clear();
     }
 
-    pub async fn load_zip(&mut self, url: &str) -> Result<(), String> {
+    pub async fn load_zip(&mut self, url: &str) -> Result<Vec<String>, String> {
+        let mut loaded_files = Vec::new();
         let zip_bytes = load_file(url)
             .await
             .map_err(|e| format!("Failed to load zip: {:?}", e))?;
 
-        let cursor = std::io::Cursor::new(zip_bytes);
-        let mut archive = zip::ZipArchive::new(cursor)
-            .map_err(|e| format!("Invalid zip archive: {}", e))?;
+        let cursor = std::io::Cursor::new(&zip_bytes);
+        let mut archive = zip::ZipArchive::new(cursor).map_err(|e| {
+            let max_len = zip_bytes.len().min(1024 * 10);
+            let preview = String::from_utf8_lossy(&zip_bytes[..max_len]);
+            format!("Zip parsing failed: {} | Content: {:?}", e, preview)
+        })?;
 
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)
@@ -38,11 +42,12 @@ impl AssetLoader {
 
                 self.zip_cache.insert(file.name().to_string(), buffer);
 
+                loaded_files.push(file.name().to_string());
                 //info!("unpacked zip file: {}", file.name());
             }
         }
 
-        Ok(())
+        Ok(loaded_files)
     }
 
     /// Load file from loaded zip data or file system

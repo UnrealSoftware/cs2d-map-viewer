@@ -90,6 +90,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     let mut tile_path = String::from(PATH_TILES);
     tile_path.push_str(&tileset_filename);
     let tex = assets.loader.load_texture(&tile_path).await.unwrap();
+    tex.set_filter(FilterMode::Nearest);
     map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
 
     if !bg_filename.is_empty() {

@@ -422,6 +422,7 @@ var Module;
 var wasm_exports;
 
 function resize(canvas, on_resize) {
+    /*
     var dpr = dpi_scale();
     var displayWidth = canvas.clientWidth * dpr;
     var displayHeight = canvas.clientHeight * dpr;
@@ -433,6 +434,7 @@ function resize(canvas, on_resize) {
         if (on_resize != undefined)
             on_resize(Math.floor(displayWidth), Math.floor(displayHeight))
     }
+    */
 }
 
 function animation() {
@@ -1174,7 +1176,7 @@ var importObject = {
 
         setup_canvas_size: function (high_dpi) {
             window.high_dpi = high_dpi;
-            resize(canvas);
+            //resize(canvas);
         },
         run_animation_loop: function (blocking) {
             canvas.onmousemove = function (event) {
@@ -1447,9 +1449,9 @@ var importObject = {
             }
         },
         sapp_set_window_size: function (new_width, new_height) {
-            canvas.width = new_width;
-            canvas.height = new_height;
-            resize(canvas, wasm_exports.resize);
+            //canvas.width = new_width;
+            //canvas.height = new_height;
+            //resize(canvas, wasm_exports.resize);
         },
         sapp_schedule_update: function () {
             if (animation_frame_timeout) {
