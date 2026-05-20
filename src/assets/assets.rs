@@ -21,7 +21,7 @@ impl Assets {
     pub async fn init(base_zip_path: &str) -> Self {
         let mut loader = AssetLoader::new();
         if !base_zip_path.is_empty() {
-            if let Err(e) = loader.load_zip(base_zip_path).await {
+            if let Err(e) = loader.load_zip(base_zip_path, false).await {
                 error!("Failed to load zip '{}': {}", base_zip_path, e);
             }
         }

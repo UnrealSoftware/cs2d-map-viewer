@@ -60,7 +60,7 @@ async fn main() {
         let url = "https://www.unrealsoftware.de/get.php?get={f}&p=2&cid={cid}"
             .replace("{f}", &load_file)
             .replace("{cid}", &load_file_cid);
-        match assets.loader.load_zip(&url).await {
+        match assets.loader.load_zip(&url, true).await {
            Ok(loaded_files) => {
                for map_file in loaded_files.iter().filter(|file| file.ends_with(".map")) {
                    did_load_map = read_map_file(map_file, &mut map, &mut assets).await.is_ok();
