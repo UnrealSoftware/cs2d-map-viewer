@@ -46,14 +46,14 @@ impl Entity {
         match self.entity_type {
             EntityType::EnvSprite => {
                 let path = self.strings[0].as_str();
-                let asset = assets.load_texture(path).await;
-                self.asset_id = Some(asset.id);
+                let asset_id = assets.load_texture(path).await;
+                self.asset_id = asset_id;
             }
             EntityType::EnvSound => {
                 let path = self.strings[0].as_str();
                 assets.load_sound(path).await;
-                let asset = assets.load_texture(path).await;
-                self.asset_id = Some(asset.id);
+                let asset_id = assets.load_texture(path).await;
+                self.asset_id = asset_id;
             }
             EntityType::EnvDecal => {
 

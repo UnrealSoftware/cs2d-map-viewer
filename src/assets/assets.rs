@@ -51,29 +51,37 @@ impl Assets {
         self.lookup.clear();
     }
 
-    pub async fn load_texture(&mut self, path: &str) -> &Asset {
+    pub async fn load_texture(&mut self, path: &str) -> Option<AssetId> {
         let result = self.lookup.get(path);
         if result.is_some() {
-            return &self.assets[usize::from(*result.unwrap())];
+            return result.copied();
         }
-        let tex = self.loader.load_texture(path).await.unwrap();
+        let tex = self.loader.load_texture(path).await;
+        if tex.is_err() {
+            error!("Failed to load texture '{}': {}", path, tex.err().unwrap());
+            return None;
+        }
         let id = self.assets.len().into();
-        let tex_asset = Asset::from_texture2d(id, path.to_string(), 0, tex);
+        let tex_asset = Asset::from_texture2d(id, path.to_string(), 0, tex.unwrap());
         self.lookup.insert(path.to_string(), id);
         self.assets.push(tex_asset);
-        &self.assets[self.assets.len() - 1]
+        Some(id)
     }
 
-    pub async fn load_sound(&mut self, path: &str) -> &Asset {
+    pub async fn load_sound(&mut self, path: &str) -> Option<AssetId> {
         let result = self.lookup.get(path);
         if result.is_some() {
-            return &self.assets[usize::from(*result.unwrap())];
+            return result.copied();
         }
-        let bytes = self.loader.load_file(path).await.unwrap();
+        let bytes = self.loader.load_file(path).await;
+        if bytes.is_err() {
+            error!("Failed to load sound '{}': {}", path, bytes.err().unwrap());
+            return None;
+        }
         let id = self.assets.len().into();
-        let sound_asset = Asset::from_sound(id, path.to_string(), bytes);
+        let sound_asset = Asset::from_sound(id, path.to_string(), bytes.unwrap());
         self.lookup.insert(path.to_string(), id);
         self.assets.push(sound_asset);
-        &self.assets[self.assets.len() - 1]
+        Some(id)
     }
 }
