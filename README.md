@@ -8,18 +8,18 @@ Comes with JetBrains RustRover project setup but you can use whatever IDE you wa
 
 ## Current State
 Currently this is work in progress and misses most features. Current features
-- loadng map files (currenltly always de_dust2)
+- loadng map files
 - scrolling with W/A/S/D, arrow keys and mouse
 - render tiles, respecting some tile modifiers such as rotation and color/brightness
 - render basic shadows
 - loading content from zip files (if a zip with gfx/sfx/maps folders of cs2d is provided, no other files need to be loaded anymore; less overhead)
+- render env_sprite and env_image entities
 
 Missing:
-- entities (they are loaded but not displayed yet)
+- logic for other visible entities such as env_object etc
 - light engine
 - tile blending
 - tile fx
-- resource mangement
 - particles and other effects
 - user interface (load other maps, show debug info, minimap)
 - 3D rendering
@@ -30,7 +30,7 @@ Missing:
 The main reasons why I started this project are:
 - Previewing CS2D maps on the web is nice. Plan is to embed this into the CS2D file archive at www.unrealsoftware.de
 - Providing an open source example for loading and rendering CS2D maps
-- Evaluating a new tech stack
+- Evaluating a new tech stack and testing what works in browser and how well it performs
 
 ## License
 The source code of this project is licensed under the [MIT License](LICENSE).
