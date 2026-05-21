@@ -129,17 +129,19 @@ async fn main() {
         let top_left = cam.screen_to_world(vec2(0.0, 0.0));
         let rect = Rect::new(top_left.x, top_left.y, GAME_WIDTH, GAME_HEIGHT);
 
+        map.tile_fx.update(delta);
+
         // Draw Level 0 - Background
         map.background.draw(delta, rect);
         // todo: particles level 0
         // todo: Tdo.draw_reset & Tdo.draw_background
 
         // Draw Level 1 - Water
-        map.draw(rect, &assets, 1);
+        map.draw(rect, 1);
         // todo: particles level 1
 
         // Draw Level 2 - Ground
-        map.draw(rect, &assets, 2);
+        map.draw(rect, 2);
         map.draw_entities(delta, rect, &assets, 0);
         // todo: particles level 2
         // todo: Tdo.draw_ground
@@ -147,7 +149,7 @@ async fn main() {
 
         // Draw Level 3 - Items / Obstacles / Shadows
         // todo: Titem.draw
-        map.draw(rect, &assets, 3);
+        map.draw(rect, 3);
         // todo: Tdo.draw_obstacle
         // todo: Tpro.draw_ground(1)
         map.draw_entities(delta, rect, &assets, 1);
@@ -163,7 +165,7 @@ async fn main() {
         // todo: particles level 4
 
         // Draw Level 5 - Walls / Entities
-        map.draw(rect, &assets, 4);
+        map.draw(rect, 4);
         // todo: Tdo.draw_wall
         map.draw_entities(delta, rect, &assets, 2);
         // todo: Tdo.draw_overwall

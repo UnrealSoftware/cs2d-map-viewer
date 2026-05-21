@@ -1,3 +1,4 @@
+use crate::map::tile_fx::TileFxManager;
 use macroquad::prelude::*;
 use crate::assets::assets::Assets;
 use crate::map::header::MapHeader;
@@ -30,10 +31,11 @@ pub struct Map {
     pub tile_modes: Vec<TileMode>,
     pub tile_heights: Vec<u16>,
     pub tile_3d_modifiers: Vec<u8>,
+    pub tile_fx: TileFxManager,
 }
 
 impl Map {
-    pub fn draw(&mut self, rect: Rect, assets: &Assets, level: u8) {
+    pub fn draw(&mut self, rect: Rect, level: u8) {
         const RAD90: f32 = std::f32::consts::FRAC_PI_2;
         const RAD180: f32 = std::f32::consts::PI;
 
@@ -86,8 +88,24 @@ impl Map {
                     }
                 }
 
-                tex.draw_ex(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
-                         tile.frame as u16, color, rot, size);
+                let fx_mapping = self.tile_fx.mapping[tile.frame as usize];
+                if fx_mapping == usize::MAX {
+                    tex.draw_ex(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
+                                tile.frame as u16, color, rot, size);
+                } else {
+                    let effect = &self.tile_fx.effects[fx_mapping];
+                    draw_texture_ex(
+                        &effect.frames[effect.current_frame],
+                        x as f32 * TILE_SIZE,
+                        y as f32 * TILE_SIZE,
+                        color,
+                        DrawTextureParams {
+                            dest_size: Some(size),
+                            rotation: rot,
+                            ..Default::default()
+                        },
+                    )
+                }
             }
         }
     }

@@ -8,3 +8,5 @@ mod tile_modifiers;
 mod tile_mode;
 mod entity_type;
 mod tile_walkability;
+mod decal;
+mod tile_fx;

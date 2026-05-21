@@ -7,6 +7,7 @@ use crate::map::map::Map;
 use crate::map::tile::Tile;
 use crate::map::entity::Entity;
 use crate::map::entity_type::EntityType;
+use crate::map::tile_fx::TileFxManager;
 use crate::map::tile_mode::TileMode;
 use crate::map::tile_modifiers::TileModifiers;
 use crate::paths::{PATH_BACKGROUNDS, PATH_TILES};
@@ -216,6 +217,9 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     map.path = path.to_owned();
 
     map.map_update(true, true, true, None);
+    let mut tile_fx = TileFxManager::default();
+    tile_fx.init(map);
+    map.tile_fx = tile_fx;
 
     Ok(())
 }
