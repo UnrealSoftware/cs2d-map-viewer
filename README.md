@@ -14,12 +14,12 @@ Currently this is work in progress and misses most features. Current features
 - render basic shadows
 - loading content from zip files (if a zip with gfx/sfx/maps folders of cs2d is provided, no other files need to be loaded anymore; less overhead)
 - render env_sprite and env_image entities
+- tile fx
 
 Missing:
 - logic for other visible entities such as env_object etc
 - light engine
 - tile blending
-- tile fx
 - particles and other effects
 - user interface (load other maps, show debug info, minimap)
 - 3D rendering
