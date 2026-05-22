@@ -57,7 +57,7 @@ impl TextureSheet {
         Texture2D::from_image(&image)
     }
 
-    fn extract_frame_image(&self, frame:u16) -> Image {
+    pub fn extract_frame_image(&self, frame:u16) -> Image {
         let image = self.texture.get_texture_data();
         let source_rect = self.get_frame_rect(frame);;
         image.sub_image(source_rect)

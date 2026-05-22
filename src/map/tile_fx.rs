@@ -43,6 +43,11 @@ impl TileFxManager {
         }
 
         for e in &map.entities {
+            if e.entity_type != EntityType::InfoAnimation &&
+                e.entity_type != EntityType::InfoTileFx {
+                continue;
+            }
+
             let tile_idx = e.ints[0] as usize;
             if tile_idx >= tile_count {
                 error!("tried to create FX on an inexistent tile!");

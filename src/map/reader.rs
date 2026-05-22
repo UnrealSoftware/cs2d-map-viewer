@@ -7,6 +7,7 @@ use crate::map::map::Map;
 use crate::map::tile::Tile;
 use crate::map::entity::Entity;
 use crate::map::entity_type::EntityType;
+use crate::map::tile_blend::{tile_blend_init, tile_blend_update_tile};
 use crate::map::tile_fx::TileFxManager;
 use crate::map::tile_mode::TileMode;
 use crate::map::tile_modifiers::TileModifiers;
@@ -220,6 +221,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     let mut tile_fx = TileFxManager::default();
     tile_fx.init(map);
     map.tile_fx = tile_fx;
+    tile_blend_init(map, assets);
 
     Ok(())
 }

@@ -1,3 +1,4 @@
+use crate::map::tile_blend::TileBlend;
 use crate::map::tile_fx::TileFxManager;
 use macroquad::prelude::*;
 use crate::assets::assets::Assets;
@@ -32,6 +33,7 @@ pub struct Map {
     pub tile_heights: Vec<u16>,
     pub tile_3d_modifiers: Vec<u8>,
     pub tile_fx: TileFxManager,
+    pub tile_blend: Vec<TileBlend>,
 }
 
 impl Map {
@@ -42,8 +44,8 @@ impl Map {
         let tex = self.tile_texture.as_ref().unwrap();
         let size = vec2(TILE_SIZE, TILE_SIZE);
 
-        let start_x = ((rect.x / TILE_SIZE).floor() as usize).max(0);
-        let start_y = ((rect.y / TILE_SIZE).floor() as usize).max(0);
+        let start_x = (rect.x / TILE_SIZE).floor() as usize;
+        let start_y = (rect.y / TILE_SIZE).floor() as usize;
         let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
         let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
 
@@ -86,6 +88,26 @@ impl Map {
                                 1.0);
                         }
                     }
+
+                    // Blending
+                    if modifier >= 64 {
+                        let blend_idx = self.modifiers[idx].blend as usize;
+                        if blend_idx < self.tile_blend.len() {
+                            let blend = &self.tile_blend[blend_idx];
+                            draw_texture_ex(
+                                &blend.texture,
+                                x as f32 * TILE_SIZE,
+                                y as f32 * TILE_SIZE,
+                                color,
+                                DrawTextureParams {
+                                    dest_size: Some(size),
+                                    rotation: rot,
+                                    ..Default::default()
+                                },
+                            );
+                            continue;
+                        }
+                    }
                 }
 
                 let fx_mapping = self.tile_fx.mapping[tile.frame as usize];
@@ -123,8 +145,8 @@ impl Map {
     pub fn draw_shadows(&mut self, rect: Rect, assets: &Assets) {
         gl_use_material(&assets.materials.grayscale_to_alpha);
 
-        let start_x = ((rect.x / TILE_SIZE).floor() as usize).max(0);
-        let start_y = ((rect.y / TILE_SIZE).floor() as usize).max(0);
+        let start_x = (rect.x / TILE_SIZE).floor() as usize;
+        let start_y = (rect.y / TILE_SIZE).floor() as usize;
         let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
         let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
 

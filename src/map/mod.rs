@@ -10,3 +10,4 @@ mod entity_type;
 mod tile_walkability;
 mod decal;
 mod tile_fx;
+mod tile_blend;
