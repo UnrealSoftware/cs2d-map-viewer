@@ -6,8 +6,9 @@ use crate::map::map::Map;
 #[derive(Debug, Default)]
 pub struct TileFx {
     pub tile_index: usize,
-    //pub original: Option<Texture2D>,
     pub frames: Vec<Texture2D>,
+    pub animation_start: usize,
+    pub animation_end: usize,
     pub current_frame: usize,
     pub speed: f32,
     pub update_time: f32,
@@ -63,7 +64,7 @@ impl TileFxManager {
 
     fn create_animation_fx(&mut self, e: &Entity, mut map: &Map) {
         let tile_idx = e.ints[0] as usize;
-        let mut f_start = tile_idx;
+        let f_start = tile_idx;
         let mut f_end = e.ints[1] as usize;
         let speed_ms = e.ints[2] as f32;
 
@@ -72,19 +73,13 @@ impl TileFxManager {
         if f_end >= tiles.frame_count as usize { f_end = tiles.frame_count as usize - 1; }
         if f_end < f_start { f_end = f_start; }
 
-        let mut frames = Vec::new();
-        for i in f_start..=f_end {
-            let texture = tiles.extract_frame_texture(i as u16);
-            frames.push(texture);
-        }
-
         self.effects.push(TileFx {
             tile_index: tile_idx,
-            //original: tileset[tile_idx].clone(),
-            frames,
-            current_frame: 0,
+            animation_start: f_start,
+            animation_end: f_end,
+            current_frame: f_start,
             speed: speed_ms / 1000.0,
-            update_time: 0.0,
+            ..TileFx::default()
         });
         self.mapping[tile_idx] = self.effects.len() - 1;
     }
@@ -163,11 +158,9 @@ impl TileFxManager {
 
                     self.effects.push(TileFx {
                         tile_index: tile_idx,
-                        //original: original_texture.clone(),
                         frames,
-                        current_frame: 0,
                         speed: 60.0 / 1000.0,
-                        update_time: 0.0,
+                        ..TileFx::default()
                     });
                     self.mapping[tile_idx] = self.effects.len() - 1;
                 }
@@ -213,11 +206,9 @@ impl TileFxManager {
 
                 self.effects.push(TileFx {
                     tile_index: tile_idx,
-                    //original: original_texture.clone(),
                     frames,
-                    current_frame: 0,
                     speed: 50.0 / 1000.0,
-                    update_time: 0.0,
+                    ..TileFx::default()
                 });
                 self.mapping[tile_idx] = self.effects.len() - 1;
             }
@@ -255,11 +246,9 @@ impl TileFxManager {
 
                 self.effects.push(TileFx {
                     tile_index: tile_idx,
-                    //original: original_texture.clone(),
                     frames,
-                    current_frame: 0,
                     speed: 80.0 / 1000.0,
-                    update_time: 0.0,
+                    ..TileFx::default()
                 });
                 self.mapping[tile_idx] = self.effects.len() - 1;
             }
@@ -273,7 +262,14 @@ impl TileFxManager {
             fx.update_time += delta;
             if fx.update_time < fx.speed { continue; }
             fx.update_time -= fx.speed;
-            fx.current_frame = (fx.current_frame + 1) % fx.frames.len();
+            if fx.frames.len() > 0 {
+                fx.current_frame = (fx.current_frame + 1) % fx.frames.len();
+            } else {
+                fx.current_frame += 1;
+                if fx.current_frame >= fx.animation_end {
+                    fx.current_frame = fx.animation_start;
+                }
+            }
         }
     }
 }

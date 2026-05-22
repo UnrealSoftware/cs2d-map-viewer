@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 use std::collections::HashMap;
 use std::io::Read;
+use crate::util::texture_sheet::TextureSheet;
 
 /// Loads and caches files in zip files.
 /// Provides methods to load files from the zip files or the file system.
@@ -66,6 +67,13 @@ impl AssetLoader {
         }
 
         Ok(loaded_files)
+    }
+
+    pub async fn load_sheet(&self, path: &str, size: Vec2) -> Result<TextureSheet, String> {
+        let tex = self.load_texture(path)
+            .await
+            .map_err(|e| format!("Failed to load sheet from path: {:?}", e));
+        Ok(TextureSheet::new(tex?, size))
     }
 
     /// Load file from loaded zip data or file system

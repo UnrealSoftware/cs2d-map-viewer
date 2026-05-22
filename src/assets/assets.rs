@@ -13,7 +13,9 @@ pub struct Assets {
     pub assets: Vec<Asset>,
     pub lookup: HashMap<String, AssetId>,
 
-    pub shadow_sheet: TextureSheet,
+    pub shadow_map: TextureSheet,
+    pub blend_map: TextureSheet,
+    pub decals: TextureSheet,
     pub materials: Materials
 }
 
@@ -29,10 +31,9 @@ impl Assets {
         let assets = Vec::new();
         let lookup = HashMap::new();
 
-        let shadow_tex = loader.load_texture("shadowmap.png")
-            .await
-            .expect("failed to load shadow map texture");
-        let shadow_sheet = TextureSheet::new(shadow_tex, vec2(32.0, 32.0));
+        let shadow_map = loader.load_sheet("gfx/shadowmap.bmp", vec2(32.0, 32.0)).await.unwrap();
+        let blend_map = loader.load_sheet("gfx/blendmap.bmp", vec2(32.0, 32.0)).await.unwrap();
+        let decals = loader.load_sheet("gfx/decals.bmp", vec2(32.0, 32.0)).await.unwrap();
 
         let materials = Materials::load().await;
 
@@ -40,7 +41,9 @@ impl Assets {
             loader,
             assets,
             lookup,
-            shadow_sheet,
+            shadow_map,
+            blend_map,
+            decals,
             materials
         }
     }

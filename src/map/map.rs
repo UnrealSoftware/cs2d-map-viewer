@@ -90,21 +90,31 @@ impl Map {
 
                 let fx_mapping = self.tile_fx.mapping[tile.frame as usize];
                 if fx_mapping == usize::MAX {
+                    // Regular tile
                     tex.draw_ex(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
                                 tile.frame as u16, color, rot, size);
                 } else {
+                    // FX tile
                     let effect = &self.tile_fx.effects[fx_mapping];
-                    draw_texture_ex(
-                        &effect.frames[effect.current_frame],
-                        x as f32 * TILE_SIZE,
-                        y as f32 * TILE_SIZE,
-                        color,
-                        DrawTextureParams {
-                            dest_size: Some(size),
-                            rotation: rot,
-                            ..Default::default()
-                        },
-                    )
+                    if effect.frames.len() == 0 {
+                        let draw_frame = effect.current_frame as u16;
+                        if draw_frame < tex.frame_count {
+                            tex.draw_ex(x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
+                                        draw_frame, color, rot, size);
+                        }
+                    } else {
+                        draw_texture_ex(
+                            &effect.frames[effect.current_frame],
+                            x as f32 * TILE_SIZE,
+                            y as f32 * TILE_SIZE,
+                            color,
+                            DrawTextureParams {
+                                dest_size: Some(size),
+                                rotation: rot,
+                                ..Default::default()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -124,7 +134,7 @@ impl Map {
                 let shadow_frame = self.shadows[idx];
                 if shadow_frame == 255 { continue; }
 
-                assets.shadow_sheet.draw(
+                assets.shadow_map.draw(
                     x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
                     shadow_frame as u16,
                     Color::new(0.0, 0.0, 0.0, 0.3)
