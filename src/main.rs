@@ -16,6 +16,8 @@ mod assets;
 mod materials;
 mod paths;
 
+const BUILD_TIMESTAMP: &str = env!("BUILD_TIMESTAMP");
+
 const TILE_SIZE: f32 = 32.0;
 const MAP_WIDTH: i32 = 50;
 const MAP_HEIGHT: i32 = 50;
@@ -50,7 +52,8 @@ async fn main() {
         MAP_HEIGHT as f32 * TILE_SIZE / 2.0
     );
 
-    let mut assets = Assets::init("assets.zip").await;
+    let assets_path = format!("assets.zip?v={}", BUILD_TIMESTAMP);
+    let mut assets = Assets::init(&assets_path).await;
     let mut map = Map::default();
     let mut did_load_map = false;
 

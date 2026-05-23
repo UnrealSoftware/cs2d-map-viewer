@@ -19,11 +19,17 @@ impl AssetLoader {
         self.zip_cache.clear();
     }
 
-    pub async fn load_zip(&mut self, url: &str, remap: bool) -> Result<Vec<String>, String> {
-        info!("unpacking zip {}...", url);
+    pub async fn load_zip(&mut self, path: &str, remap: bool) -> Result<Vec<String>, String> {
+        info!("unpacking zip {}...", path);
 
+        let mut final_path = path.to_string();
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(query_pos) = final_path.find("?") {
+            final_path.truncate(query_pos);
+        }
+        
         let mut loaded_files = Vec::new();
-        let zip_bytes = load_file(url)
+        let zip_bytes = load_file(&final_path)
             .await
             .map_err(|e| format!("failed to load zip: {:?}", e))?;
 
