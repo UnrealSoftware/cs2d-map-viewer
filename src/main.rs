@@ -57,6 +57,7 @@ async fn main() {
     let mut map = Map::default();
     let mut did_load_map = false;
 
+    // Try to load specified map from UnrealSoftware.de file archive
     let load_file = util::params::get_app_param_string("file", "");
     let load_file_cid = util::params::get_app_param_string("cid", "");
     if load_file.len() > 0 && load_file_cid.len() > 0 {

@@ -16,7 +16,10 @@ pub struct Assets {
     pub shadow_map: TextureSheet,
     pub blend_map: TextureSheet,
     pub decals: TextureSheet,
-    pub materials: Materials
+    pub palm_leaf: Texture2D,
+    pub tree_leafs: Texture2D,
+
+    pub materials: Materials,
 }
 
 impl Assets {
@@ -34,6 +37,8 @@ impl Assets {
         let shadow_map = loader.load_sheet("gfx/shadowmap.bmp", vec2(32.0, 32.0)).await.unwrap();
         let blend_map = loader.load_sheet("gfx/blendmap.bmp", vec2(32.0, 32.0)).await.unwrap();
         let decals = loader.load_sheet("gfx/decals.bmp", vec2(32.0, 32.0)).await.unwrap();
+        let palm_leaf = loader.load_texture("incbin/palmleaf.png").await.unwrap();
+        let tree_leafs = loader.load_texture("incbin/treeleafs.png").await.unwrap();
 
         let materials = Materials::load().await;
 
@@ -44,6 +49,8 @@ impl Assets {
             shadow_map,
             blend_map,
             decals,
+            palm_leaf,
+            tree_leafs,
             materials
         }
     }

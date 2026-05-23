@@ -167,15 +167,152 @@ impl Entity {
                     return;
                 }
 
+                let x = self.position.x as f32 * TILE_SIZE;
+                let y = self.position.y as f32 * TILE_SIZE;
+
                 let idx: usize = self.asset_id.unwrap().into();
                 let asset = &assets.assets[idx];
                 let tex = asset.texture2d.as_ref().unwrap();
 
-                let x = self.position.x as f32 * TILE_SIZE;
-                let y = self.position.y as f32 * TILE_SIZE;
+                if x + tex.width() < rect.x || y + tex.height() < rect.y || x > rect.right() || y > rect.bottom() {
+                    return;
+                }
 
                 draw_texture(&tex, x, y, WHITE);
 
+            }
+            EntityType::FuncDynamicWall => {
+                //TODO
+            }
+            EntityType::InfoNowFow => {
+                //TODO
+            }
+            EntityType::EnvObject => {
+                if self.state == 0 { /* return; */ }
+
+                let x = self.position.x as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+                let y = self.position.y as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+
+                const BUFFER: f32 = 150.0;
+                if x + BUFFER < rect.x || y + BUFFER < rect.y || x - BUFFER > rect.right() || y - BUFFER > rect.bottom() {
+                    return;
+                }
+
+                match self.ints[0] {
+                    // 0 - Palm Tree
+                    0 => {
+                        if level != 2 { return;}
+                        let base_rot = self.ints[4] as f32;
+                        let scale = self.strings[1].parse().unwrap_or(1.0) * 0.8;
+                        let size = vec2(
+                            &assets.palm_leaf.width() * scale,
+                            &assets.palm_leaf.height() * scale);
+
+                        let r = self.ints[1] as u8;
+                        let g = self.ints[2] as u8;
+                        let b = self.ints[3] as u8;
+                        let a = (self.strings[1].parse().unwrap_or(1.0) * 255.0) as u8;
+                        let col = Color::from_rgba(r, g, b, a);
+
+                        const PIV_X: f32 = 15.0;
+                        const PIV_Y: f32 = 2.0;
+
+                        let get_anim_degrees = |i: i32, t: f32| -> f32 {
+                            let anim_time = t * 100.0 + (i * 20) as f32;
+                            let trig_val = if i % 3 == 0 {
+                                anim_time.to_radians().sin()
+                            } else {
+                                anim_time.to_radians().cos()
+                            };
+                            trig_val * 3.0
+                        };
+
+                        let t = get_time() + x as f64 - y as f64 * 2.1;
+
+                        let angle: f32 = 45.0;
+                        let shadow_x = x + angle.to_radians().cos() * 4.0;
+                        let shadow_y = y + angle.to_radians().sin() * 4.0;
+
+                        for i in 1..=8 {
+                            let rot = base_rot + (i * 45) as f32 + get_anim_degrees(i, t as f32);
+                            draw_texture_ex(
+                                &assets.palm_leaf,
+                                shadow_x, shadow_y,
+                                Color::new(0.0, 0.0, 0.0, 0.3),
+                                DrawTextureParams {
+                                    dest_size: Some(size),
+                                    rotation: rot.to_radians(),
+                                    pivot: Some(vec2(shadow_x + PIV_X * scale, shadow_y + PIV_Y * scale)),
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                        for i in 1..=8 {
+                            let rot = base_rot + (i * 45) as f32 + get_anim_degrees(i, t as f32);
+                            draw_texture_ex(
+                                &assets.palm_leaf,
+                                x, y,
+                                col,
+                                DrawTextureParams {
+                                    dest_size: Some(size),
+                                    rotation: rot.to_radians(),
+                                    pivot: Some(vec2(x + PIV_X * scale, y + PIV_Y * scale)),
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                    }
+                    // 1 - Tree
+                    1 => {
+                        if level != 2 { return;}
+                    }
+                    _ => {}
+                }
+            }
+            EntityType::TriggerUse => {
+                //TODO
+            }
+            EntityType::InfoQuake => {
+                //TODO
+            }
+            EntityType::InfoCtf => {
+                //TODO
+            }
+            EntityType::InfoDom => {
+                //TODO
+            }
+            EntityType::EnvItem => {
+                //TODO
+            }
+            EntityType::EnvSound => {
+                //TODO
+            }
+            EntityType::EnvBreakable => {
+                //TODO
+            }
+            EntityType::EnvHurt => {
+                //TODO
+            }
+            EntityType::EnvLight => {
+                //TODO
+            }
+            EntityType::GenParticles => {
+                //TODO
+            }
+            EntityType::GenSprites => {
+                //TODO
+            }
+            EntityType::GenWeather => {
+                //TODO
+            }
+            EntityType::GenFx => {
+                //TODO
+            }
+            EntityType::TriggerDelay => {
+                //TODO
+            }
+            EntityType::EnvCube3d => {
+                //TODO
             }
             _ => {}
         }
