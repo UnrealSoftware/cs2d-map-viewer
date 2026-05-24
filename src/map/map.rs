@@ -43,11 +43,7 @@ impl Map {
 
         let tex = self.tile_texture.as_ref().unwrap();
         let size = vec2(TILE_SIZE, TILE_SIZE);
-
-        let start_x = (rect.x / TILE_SIZE).floor() as usize;
-        let start_y = (rect.y / TILE_SIZE).floor() as usize;
-        let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
-        let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
+        let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
 
         for y in start_y..end_y {
             for x in start_x..end_x {
@@ -143,10 +139,7 @@ impl Map {
     }
 
     pub fn draw_shadows(&mut self, rect: Rect, assets: &Assets) {
-        let start_x = (rect.x / TILE_SIZE).floor() as usize;
-        let start_y = (rect.y / TILE_SIZE).floor() as usize;
-        let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
-        let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
+        let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
 
         gl_use_material(&assets.materials.grayscale_to_alpha);
 
@@ -174,11 +167,7 @@ impl Map {
     }
 
     pub fn draw_grid(&mut self, rect: Rect, assets: &Assets) {
-        let start_x = (rect.x / TILE_SIZE).floor() as usize;
-        let start_y = (rect.y / TILE_SIZE).floor() as usize;
-        let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
-        let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
-
+        let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
         let col = WHITE;
 
         gl_use_material(&assets.materials.invert);
@@ -432,5 +421,16 @@ impl Map {
                 areas[idx] = 1;
             }
         }
+    }
+
+    #[inline]
+    pub fn get_update_bounds(&self, rect: Rect) -> (usize, usize, usize, usize) {
+        let start_x = (rect.x / TILE_SIZE).floor() as usize;
+        let start_y = (rect.y / TILE_SIZE).floor() as usize;
+
+        let end_x = ((rect.right() / TILE_SIZE).ceil() as usize).min(self.size.x as usize);
+        let end_y = ((rect.bottom() / TILE_SIZE).ceil() as usize).min(self.size.y as usize);
+
+        (start_x, start_y, end_x, end_y)
     }
 }
