@@ -143,12 +143,12 @@ impl Map {
     }
 
     pub fn draw_shadows(&mut self, rect: Rect, assets: &Assets) {
-        gl_use_material(&assets.materials.grayscale_to_alpha);
-
         let start_x = (rect.x / TILE_SIZE).floor() as usize;
         let start_y = (rect.y / TILE_SIZE).floor() as usize;
         let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
         let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
+
+        gl_use_material(&assets.materials.grayscale_to_alpha);
 
         for y in start_y..end_y {
             for x in start_x..end_x {
@@ -171,6 +171,55 @@ impl Map {
         for entity in &mut self.entities {
             entity.draw(delta, rect, assets, level);
         }
+    }
+
+    pub fn draw_grid(&mut self, rect: Rect, assets: &Assets) {
+        let start_x = (rect.x / TILE_SIZE).floor() as usize;
+        let start_y = (rect.y / TILE_SIZE).floor() as usize;
+        let end_x = ((rect.right() / TILE_SIZE).floor() as usize + 1).min(self.size.x as usize);
+        let end_y = ((rect.bottom() / TILE_SIZE).floor() as usize + 1).min(self.size.y as usize);
+
+        let col = WHITE;
+
+        gl_use_material(&assets.materials.invert);
+
+        for y in start_y..end_y {
+            for x in start_x..end_x {
+                draw_rectangle(
+                    x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
+                    TILE_SIZE, 1.0,
+                    col
+                );
+                draw_rectangle(
+                    x as f32 * TILE_SIZE, y as f32 * TILE_SIZE + 1.0,
+                    1.0, TILE_SIZE - 1.0,
+                    col
+                );
+            }
+        }
+
+        if end_x == self.size.x as usize {
+            draw_rectangle(
+                end_x as f32 * TILE_SIZE,
+                start_y as f32 * TILE_SIZE,
+                1.0,
+                (end_y - start_y) as f32 * TILE_SIZE,
+                col
+            );
+        }
+
+        if end_y == self.size.y as usize {
+            let corner_closure = if end_x == self.size.x as usize { 1.0 } else { 0.0 };
+            draw_rectangle(
+                start_x as f32 * TILE_SIZE,
+                end_y as f32 * TILE_SIZE,
+                (end_x - start_x) as f32 * TILE_SIZE + corner_closure,
+                1.0,
+                col
+            );
+        }
+
+        assets.materials.use_default();
     }
 
     pub fn map_update(&mut self, modes: bool, shadows: bool, entities: bool, area : Option<RectI>) {

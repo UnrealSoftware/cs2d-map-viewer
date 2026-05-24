@@ -14,6 +14,7 @@ pub struct Materials {
     pub premultiplied_alpha: Material,
     pub light_blend: Material,
     pub shade_blend: Material,
+    pub invert: Material,
 }
 
 impl Materials {
@@ -205,6 +206,30 @@ impl Materials {
             },
         ).unwrap();
 
+        let invert = load_material(
+            ShaderSource::Glsl {
+                vertex: include_str!("shaders/default.vert"),
+                fragment: include_str!("shaders/invert.frag"),
+            },
+            MaterialParams {
+                pipeline_params: PipelineParams {
+                    color_blend: Some(BlendState::new(
+                        Equation::Add,
+                        BlendFactor::OneMinusValue(BlendValue::DestinationColor),
+                        BlendFactor::Zero,
+                    )),
+                    alpha_blend: Some(BlendState::new(
+                        Equation::Add,
+                        BlendFactor::One,
+                        BlendFactor::Zero,
+                    )),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )
+        .expect("Failed to compile shader material");
+
         Self {
             grayscale_to_alpha,
             lum_to_alpha,
@@ -215,6 +240,7 @@ impl Materials {
             premultiplied_alpha,
             light_blend,
             shade_blend,
+            invert,
         }
     }
 

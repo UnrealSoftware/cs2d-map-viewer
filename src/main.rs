@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use macroquad::prelude::*;
 use crate::assets::assets::Assets;
 use crate::audio::AudioPlayer;
@@ -10,6 +11,7 @@ use crate::paths::{PATH_MAPS};
 use image as _;
 use macroquad::hash;
 use macroquad::ui::{root_ui, widgets};
+use crate::settings::Settings;
 
 mod audio;
 mod util;
@@ -17,6 +19,7 @@ mod map;
 mod assets;
 mod materials;
 mod paths;
+mod settings;
 
 const BUILD_TIMESTAMP: &str = env!("BUILD_TIMESTAMP");
 
@@ -40,6 +43,12 @@ fn window_conf() -> Conf {
         },
         ..Default::default()
     }
+}
+
+thread_local! {
+    pub static SETTINGS: RefCell<Settings> = RefCell::new(Settings {
+        grid: false,
+    });
 }
 
 #[macroquad::main(window_conf)]
@@ -129,6 +138,13 @@ async fn main() {
             if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { world_target.x -= speed; }
             if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { world_target.x += speed; }
 
+            if is_key_released(KeyCode::G) {
+                SETTINGS.with(|s| {
+                    let mut settings = s.borrow_mut();
+                    settings.grid = !settings.grid;
+                });
+            }
+
             let current_pos: (f32, f32);
             let pointer_down: bool;
             let active_touches = touches();
@@ -217,6 +233,11 @@ async fn main() {
         // todo: fow
         // todo: night vision overlay
 
+
+        if SETTINGS.with(|s| s.borrow().grid) {
+            map.draw_grid(rect, &assets);
+        }
+
         // UI
 
         set_default_camera();
@@ -243,12 +264,12 @@ async fn main() {
             }
         }
 
-        let fps_text = format!("FPS: {}", get_fps());
+        let fps_text = format!("{}", get_fps());
         let text_dimensions = measure_text(&fps_text, None, 20, 1.0);
         draw_text(
             &fps_text,
             screen_width() - text_dimensions.width - 10.0,
-            20.0 + text_dimensions.offset_y,
+            10.0 + text_dimensions.offset_y,
             20.0,
             GREEN
         );
