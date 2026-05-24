@@ -8,6 +8,8 @@ use crate::paths::{PATH_MAPS};
 // fake use of image lib to support bmp without marking lib as unused
 #[allow(unused_imports)]
 use image as _;
+use macroquad::hash;
+use macroquad::ui::{root_ui, widgets};
 
 mod audio;
 mod util;
@@ -96,28 +98,61 @@ async fn main() {
     //let mem = load_file("unrealsoftware.wav").await.unwrap();
     //audio.play_memory(&*mem, 0.5, [-50.0, 0.0], true);
 
-    let mut last_mouse = mouse_position();
+    let mut last_pointer_pos = (0.0, 0.0);
+    let mut was_pointer_down = false;
 
     loop {
         let delta = get_frame_time();
 
-        let mut speed = if is_key_down(KeyCode::LeftShift) { 5.0 } else { 1.0 };
-        if is_key_down(KeyCode::LeftAlt) { speed *= 0.1; }
-        speed *= MOVE_SPEED * delta;
-        if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { world_target.y -= speed; }
-        if is_key_down(KeyCode::Down)  || is_key_down(KeyCode::S) { world_target.y += speed; }
-        if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { world_target.x -= speed; }
-        if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { world_target.x += speed; }
+        let mut is_pointer_over_ui = false;
 
-        let current_mouse = mouse_position();
-        let mouse_delta_x = current_mouse.0 - last_mouse.0;
-        let mouse_delta_y = current_mouse.1 - last_mouse.1;
-        last_mouse = current_mouse;
+        /*
+        egui_macroquad::ui(|egui_ctx| {
+            let scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
+            egui_ctx.set_pixels_per_point(scale);
 
-        if is_mouse_button_down(MouseButton::Left) {
-            let screen_scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
-            world_target.x -= mouse_delta_x / screen_scale;
-            world_target.y -= mouse_delta_y / screen_scale;
+            egui::Window::new("CS2D Map Viewer")
+                .show(egui_ctx, |ui| {
+                    ui.label("Test");
+                });
+
+            is_pointer_over_ui = egui_ctx.wants_pointer_input() || egui_ctx.is_pointer_over_area();
+        });
+         */
+
+        if !is_pointer_over_ui {
+            let mut speed = if is_key_down(KeyCode::LeftShift) { 5.0 } else { 1.0 };
+            if is_key_down(KeyCode::LeftAlt) { speed *= 0.1; }
+            speed *= MOVE_SPEED * delta;
+            if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) { world_target.y -= speed; }
+            if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) { world_target.y += speed; }
+            if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) { world_target.x -= speed; }
+            if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) { world_target.x += speed; }
+
+            let current_pos: (f32, f32);
+            let pointer_down: bool;
+            let active_touches = touches();
+
+            if !active_touches.is_empty() {
+                let touch = &active_touches[0];
+                current_pos = (touch.position.x, touch.position.y);
+                pointer_down = touch.phase != TouchPhase::Ended && touch.phase != TouchPhase::Cancelled;
+            } else {
+                current_pos = mouse_position();
+                pointer_down = is_mouse_button_down(MouseButton::Left);
+            }
+
+            let delta_x = current_pos.0 - last_pointer_pos.0;
+            let delta_y = current_pos.1 - last_pointer_pos.1;
+
+            if pointer_down && was_pointer_down {
+                let screen_scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
+                world_target.x -= delta_x / screen_scale;
+                world_target.y -= delta_y / screen_scale;
+            }
+
+            last_pointer_pos = current_pos;
+            was_pointer_down = pointer_down;
         }
 
         assets.materials.use_default();
@@ -208,8 +243,6 @@ async fn main() {
             }
         }
 
-        draw_text("Use Arrow Keys to Scroll", 10.0, 10.0, 20.0, WHITE);
-
         let fps_text = format!("FPS: {}", get_fps());
         let text_dimensions = measure_text(&fps_text, None, 20, 1.0);
         draw_text(
@@ -219,6 +252,8 @@ async fn main() {
             20.0,
             GREEN
         );
+
+        egui_macroquad::draw();
 
         next_frame().await
     }

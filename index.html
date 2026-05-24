@@ -56,7 +56,50 @@
         <div class="spinner"></div>
         <div class="loading-text">Loading</div>
     </div>
-	<canvas id="glcanvas" width="1920" height="1080" tabindex='1'></canvas>
+	<canvas id="glcanvas" tabindex='1'></canvas>
+    <script>
+        const c = document.getElementById('glcanvas');
+        const INTERNAL_W = 1920;
+        const INTERNAL_H = 1080;
+        c.setAttribute('width', INTERNAL_W);
+        c.setAttribute('height', INTERNAL_H);
+        Object.defineProperty(c, 'width', { get: () => INTERNAL_W, set: () => {} });
+        Object.defineProperty(c, 'height', { get: () => INTERNAL_H, set: () => {} });
+
+        function patchCoordinateScaling(proto) {
+            const origX = Object.getOwnPropertyDescriptor(proto, 'clientX');
+            const origY = Object.getOwnPropertyDescriptor(proto, 'clientY');
+
+            Object.defineProperty(proto, 'clientX', {
+                get: function() {
+                    let val = origX.get.call(this);
+                    if (this.target && this.target.id === 'glcanvas') {
+                        let rect = this.target.getBoundingClientRect();
+                        let scale = INTERNAL_W / rect.width;
+                        return (val - rect.left) * scale + rect.left;
+                    }
+                    return val;
+                }
+            });
+
+            Object.defineProperty(proto, 'clientY', {
+                get: function() {
+                    let val = origY.get.call(this);
+                    if (this.target && this.target.id === 'glcanvas') {
+                        let rect = this.target.getBoundingClientRect();
+                        let scale = INTERNAL_H / rect.height;
+                        return (val - rect.top) * scale + rect.top;
+                    }
+                    return val;
+                }
+            });
+        }
+
+        patchCoordinateScaling(MouseEvent.prototype);
+        if (typeof Touch !== 'undefined') {
+            patchCoordinateScaling(Touch.prototype);
+        }
+    </script>
 	<script src="./js/gl.min.js"></script>
     <script src="./js/audio.js"></script>
 	<script src="./js/query.js"></script>
