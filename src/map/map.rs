@@ -28,6 +28,7 @@ pub struct Map {
 
     pub entities: Vec<Entity>,
 
+    pub tile_texture_filename: String,
     pub tile_texture: Option<TextureSheet>,
     pub tile_modes: Vec<TileMode>,
     pub tile_heights: Vec<u16>,

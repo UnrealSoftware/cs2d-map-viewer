@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 /// Map background properties and state
 #[derive(Debug, Default)]
 pub struct MapBackground {
-    pub path: String,
+    pub filename: String,
     pub texture: Option<Texture2D>,
 
     pub is_transparent: bool,
@@ -13,7 +13,7 @@ pub struct MapBackground {
     pub scroll_tile_size: u16,
     pub scroll_like_tiles: bool,
 
-    pub path_old: String,
+    pub filename_old: String,
     pub texture_old: Option<Texture2D>,
     pub scroll_speed_old: IVec2,
     pub scroll_tile_size_old: u16,

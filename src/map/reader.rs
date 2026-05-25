@@ -7,7 +7,7 @@ use crate::map::map::Map;
 use crate::map::tile::Tile;
 use crate::map::entity::Entity;
 use crate::map::entity_type::EntityType;
-use crate::map::tile_blend::{tile_blend_init, tile_blend_update_tile};
+use crate::map::tile_blend::{tile_blend_init};
 use crate::map::tile_fx::TileFxManager;
 use crate::map::tile_mode::TileMode;
 use crate::map::tile_modifiers::TileModifiers;
@@ -48,9 +48,10 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
     _ = reader.read_u8()?;
-    map.header.has_modifiers = use_tile_modifiers;
-    map.header.use_64_pixel_tiles = use_64_pixel_tiles;
     map.background.scroll_like_tiles = scroll_background_like_tiles > 0;
+    map.header.has_modifiers = use_tile_modifiers;
+    map.header.save_tile_heights = save_tile_heights;
+    map.header.use_64_pixel_tiles = use_64_pixel_tiles;
 
     // 10 ints for map settings / info
     let uptime_ms = reader.read_i32::<E>()?;
@@ -63,6 +64,9 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     _ = reader.read_i32::<E>()?;
     _ = reader.read_i32::<E>()?;
     _ = reader.read_i32::<E>()?;
+    map.header.uptime_ms = uptime_ms;
+    map.header.usgn_id = usgn_id;
+    map.header.daylight_time = daylight_time;
 
     // 10 strings for map settings / info
     let author_name = read_string(&mut reader)?;
@@ -75,9 +79,11 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     _ = read_string(&mut reader)?;
     _ = read_string(&mut reader)?;
     _ = read_string(&mut reader)?;
+    map.header.author_name = author_name;
+    map.header.tool_name = tool_name;
 
     // More map settings
-    let control_string = read_string(&mut reader)?;
+    let _ = read_string(&mut reader)?; // map code
     let tileset_filename = read_string(&mut reader)?;
     let tile_count = reader.read_u8()?;
     let width = reader.read_i32::<E>()? + 1;
@@ -89,10 +95,11 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     let bg_color_g = reader.read_u8()?;
     let bg_color_b = reader.read_u8()?;
 
-    let mut tile_path = String::from(PATH_TILES);
-    tile_path.push_str(&tileset_filename);
-    let tex = assets.loader.load_texture(&tile_path).await.unwrap();
+    let mut tile_filename = String::from(PATH_TILES);
+    tile_filename.push_str(&tileset_filename);
+    let tex = assets.loader.load_texture(&tile_filename).await.unwrap();
     tex.set_filter(FilterMode::Nearest);
+    map.tile_texture_filename = tile_filename;
     map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
 
     if !bg_filename.is_empty() {
@@ -100,6 +107,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
         bg_path.push_str(&bg_filename);
         map.background.texture = Some(assets.loader.load_texture(&bg_path).await.unwrap());
     }
+    map.background.filename = bg_filename;
     map.background.scroll_speed = IVec2::new(bg_scroll_x, bg_scroll_y);
     map.background.color = Color::from_rgba(bg_color_r, bg_color_g, bg_color_b, 255);
 

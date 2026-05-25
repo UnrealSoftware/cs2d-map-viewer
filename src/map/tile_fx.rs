@@ -67,7 +67,7 @@ impl TileFxManager {
         }
     }
 
-    fn create_animation_fx(&mut self, e: &Entity, mut map: &Map) {
+    fn create_animation_fx(&mut self, e: &Entity, map: &Map) {
         let tile_idx = e.ints[0] as usize;
         let f_start = tile_idx;
         let mut f_end = e.ints[1] as usize;

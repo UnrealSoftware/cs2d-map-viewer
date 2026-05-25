@@ -59,7 +59,7 @@ impl TextureSheet {
 
     pub fn extract_frame_image(&self, frame:u16) -> Image {
         let image = self.texture.get_texture_data();
-        let source_rect = self.get_frame_rect(frame);;
+        let source_rect = self.get_frame_rect(frame);
         image.sub_image(source_rect)
     }
 
