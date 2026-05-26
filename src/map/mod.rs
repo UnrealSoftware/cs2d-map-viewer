@@ -1,6 +1,7 @@
 pub mod reader;
 pub mod map;
 pub mod entity;
+pub mod decal;
 mod background;
 mod header;
 mod tile;
@@ -8,6 +9,5 @@ mod tile_modifiers;
 mod tile_mode;
 mod entity_type;
 mod tile_walkability;
-mod decal;
 mod tile_fx;
 mod tile_blend;

@@ -5,13 +5,13 @@ use crate::audio::AudioPlayer;
 use crate::map::map::Map;
 use crate::map::reader::read_map_file;
 use crate::paths::{PATH_MAPS};
+use crate::settings::Settings;
+use crate::util::path::{get_filename, get_filename_without_ext};
 
 // fake use of image lib to support bmp without marking lib as unused
 #[allow(unused_imports)]
 use image as _;
-use macroquad::hash;
-use macroquad::ui::{root_ui, widgets};
-use crate::settings::Settings;
+use crate::map::decal::DecalManager;
 
 mod audio;
 mod util;
@@ -48,6 +48,9 @@ fn window_conf() -> Conf {
 thread_local! {
     pub static SETTINGS: RefCell<Settings> = RefCell::new(Settings {
         grid: false,
+        shadows: true,
+        entities: false,
+        entity_fx: true,
     });
 }
 
@@ -67,6 +70,7 @@ async fn main() {
     let mut assets = Assets::init(&assets_path).await;
     let mut map = Map::default();
     let mut did_load_map = false;
+    let mut decals = DecalManager::default();
 
     // Try to load specified map from UnrealSoftware.de file archive
     let load_file = util::params::get_app_param_string("file", "");
@@ -95,6 +99,8 @@ async fn main() {
         read_map_file(&map_path, &mut map, &mut assets).await.unwrap();
     }
 
+    decals.cache_decal_entities(&map);
+
     let rt: Option<RenderTarget> = if cfg!(feature = "r2tex") {
         Some(render_target(GAME_WIDTH as u32, GAME_HEIGHT as u32))
     } else {
@@ -115,19 +121,32 @@ async fn main() {
 
         let mut is_pointer_over_ui = false;
 
-        /*
         egui_macroquad::ui(|egui_ctx| {
             let scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
             egui_ctx.set_pixels_per_point(scale);
 
-            egui::Window::new("CS2D Map Viewer")
-                .show(egui_ctx, |ui| {
-                    ui.label("Test");
-                });
+            SETTINGS.with(|s| {
+                let mut settings = s.borrow_mut();
+                egui::Window::new("Settings / Info")
+                    .default_open(false)
+                    .resizable(false)
+                    .show(egui_ctx, |ui| {
+                        ui.checkbox(&mut settings.grid, "Grid");
+                        ui.checkbox(&mut settings.shadows, "Shadows");
+                        ui.checkbox(&mut settings.entities, "Entities");
+                        ui.checkbox(&mut settings.entity_fx, "Entity Graphics/FX");
+                        ui.separator();
+                        ui.label(format!("Map: {}", get_filename_without_ext(&map.path)));
+                        ui.label(format!("Size: {}x{}", &map.size.x, &map.size.y));
+                        ui.label(format!("Tiles: {}", get_filename(&map.tile_texture_filename)));
+                        if map.header.author_name.len() > 0 && map.header.author_name != "Player" {
+                            ui.label(format!("Author: {}", &map.header.author_name));
+                        }
+                    });
+            });
 
             is_pointer_over_ui = egui_ctx.wants_pointer_input() || egui_ctx.is_pointer_over_area();
         });
-         */
 
         if !is_pointer_over_ui {
             let mut speed = if is_key_down(KeyCode::LeftShift) { 5.0 } else { 1.0 };
@@ -184,7 +203,10 @@ async fn main() {
         let top_left = cam.screen_to_world(vec2(0.0, 0.0));
         let rect = Rect::new(top_left.x, top_left.y, GAME_WIDTH, GAME_HEIGHT);
 
+        let entity_fx = SETTINGS.with(|s| s.borrow().entity_fx);
+
         map.tile_fx.update(delta);
+        decals.update_visible_rect(rect);
 
         // Draw Level 0 - Background
         map.background.draw(delta, rect);
@@ -197,7 +219,8 @@ async fn main() {
 
         // Draw Level 2 - Ground
         map.draw(rect, 2);
-        map.draw_entities(delta, rect, &assets, 0);
+        decals.draw(&assets, map::decal::DECAL_LEVEL_FLOOR);
+        if entity_fx { map.draw_entities(delta, rect, &assets, 0); }
         // todo: particles level 2
         // todo: Tdo.draw_ground
         // todo: Tpro.draw_ground(0)
@@ -205,10 +228,15 @@ async fn main() {
         // Draw Level 3 - Items / Obstacles / Shadows
         // todo: Titem.draw
         map.draw(rect, 3);
+        decals.draw(&assets, map::decal::DECAL_LEVEL_OBSTACLE);
         // todo: Tdo.draw_obstacle
         // todo: Tpro.draw_ground(1)
-        map.draw_entities(delta, rect, &assets, 1);
-        map.draw_shadows(rect, &assets);
+        if entity_fx { map.draw_entities(delta, rect, &assets, 1); }
+
+        if SETTINGS.with(|s| s.borrow().shadows) {
+            map.draw_shadows(rect, &assets);
+        }
+
         // todo: particles level 3
 
         // Draw Level 4 - Hostages / Players / Flying Projectiles
@@ -221,8 +249,9 @@ async fn main() {
 
         // Draw Level 5 - Walls / Entities
         map.draw(rect, 4);
+        decals.draw(&assets, map::decal::DECAL_LEVEL_WALL);
         // todo: Tdo.draw_wall
-        map.draw_entities(delta, rect, &assets, 2);
+        if entity_fx { map.draw_entities(delta, rect, &assets, 2); }
         // todo: Tdo.draw_overwall
         // todo: particles level 5
         // todo: particles level 7 (?!?!)
