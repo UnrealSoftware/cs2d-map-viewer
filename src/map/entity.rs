@@ -317,4 +317,10 @@ impl Entity {
             _ => {}
         }
     }
+
+    pub fn draw_info(&mut self, assets: &Assets) {
+        let x = self.position.x as f32 * TILE_SIZE + (TILE_SIZE - &assets.gui_icons.frame_size.x) * 0.5;
+        let y = self.position.y as f32 * TILE_SIZE + (TILE_SIZE - &assets.gui_icons.frame_size.y) * 0.5;
+        assets.gui_icons.draw(x, y, 9, self.entity_type.get_color());
+    }
 }

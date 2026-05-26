@@ -167,6 +167,25 @@ impl Map {
         }
     }
 
+    pub fn draw_entity_info(&mut self, rect: Rect, assets: &Assets) {
+        gl_use_material(&assets.materials.lum_to_alpha_white);
+
+        let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
+
+        for entity in &mut self.entities {
+            if entity.position.x < start_x as i32 ||
+                entity.position.y < start_y as i32 ||
+                entity.position.x > end_x as i32 ||
+                entity.position.y > end_y as i32 {
+                continue;
+            }
+
+            entity.draw_info(assets);
+        }
+
+        assets.materials.use_default();
+    }
+
     pub fn draw_grid(&mut self, rect: Rect, assets: &Assets) {
         let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
         let col = WHITE;

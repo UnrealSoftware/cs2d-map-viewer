@@ -49,6 +49,7 @@ thread_local! {
     pub static SETTINGS: RefCell<Settings> = RefCell::new(Settings {
         grid: false,
         shadows: true,
+        decals: true,
         entities: false,
         entity_fx: true,
     });
@@ -133,6 +134,7 @@ async fn main() {
                     .show(egui_ctx, |ui| {
                         ui.checkbox(&mut settings.grid, "Grid");
                         ui.checkbox(&mut settings.shadows, "Shadows");
+                        ui.checkbox(&mut settings.decals, "Decals");
                         ui.checkbox(&mut settings.entities, "Entities");
                         ui.checkbox(&mut settings.entity_fx, "Entity Graphics/FX");
                         ui.separator();
@@ -204,9 +206,10 @@ async fn main() {
         let rect = Rect::new(top_left.x, top_left.y, GAME_WIDTH, GAME_HEIGHT);
 
         let entity_fx = SETTINGS.with(|s| s.borrow().entity_fx);
+        let draw_decals = SETTINGS.with(|s| s.borrow().decals);
 
         map.tile_fx.update(delta);
-        decals.update_visible_rect(rect);
+        if draw_decals { decals.update_visible_rect(rect); }
 
         // Draw Level 0 - Background
         map.background.draw(delta, rect);
@@ -219,7 +222,7 @@ async fn main() {
 
         // Draw Level 2 - Ground
         map.draw(rect, 2);
-        decals.draw(&assets, map::decal::DECAL_LEVEL_FLOOR);
+        if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_FLOOR); }
         if entity_fx { map.draw_entities(delta, rect, &assets, 0); }
         // todo: particles level 2
         // todo: Tdo.draw_ground
@@ -228,7 +231,7 @@ async fn main() {
         // Draw Level 3 - Items / Obstacles / Shadows
         // todo: Titem.draw
         map.draw(rect, 3);
-        decals.draw(&assets, map::decal::DECAL_LEVEL_OBSTACLE);
+        if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_OBSTACLE); }
         // todo: Tdo.draw_obstacle
         // todo: Tpro.draw_ground(1)
         if entity_fx { map.draw_entities(delta, rect, &assets, 1); }
@@ -249,7 +252,7 @@ async fn main() {
 
         // Draw Level 5 - Walls / Entities
         map.draw(rect, 4);
-        decals.draw(&assets, map::decal::DECAL_LEVEL_WALL);
+        if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_WALL); }
         // todo: Tdo.draw_wall
         if entity_fx { map.draw_entities(delta, rect, &assets, 2); }
         // todo: Tdo.draw_overwall
@@ -265,6 +268,10 @@ async fn main() {
 
         if SETTINGS.with(|s| s.borrow().grid) {
             map.draw_grid(rect, &assets);
+        }
+
+        if SETTINGS.with(|s| s.borrow().entities) {
+            map.draw_entity_info(rect, &assets);
         }
 
         // UI
