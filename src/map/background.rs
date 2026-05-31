@@ -24,6 +24,8 @@ pub struct MapBackground {
 }
 
 impl MapBackground {
+    /// Background rendering
+    /// If there is a texture, it will be rendered using a single quad and a tiling material.
     pub fn draw(&mut self, delta: f32, rect: Rect, assets: &Assets) {
         clear_background(self.color);
 

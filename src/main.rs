@@ -12,6 +12,7 @@ use crate::util::path::{get_filename, get_filename_without_ext};
 #[allow(unused_imports)]
 use image as _;
 use crate::map::decal::DecalManager;
+use crate::ui::ui_main::MainUI;
 
 mod audio;
 mod util;
@@ -20,6 +21,7 @@ mod assets;
 mod materials;
 mod paths;
 mod settings;
+pub mod ui;
 
 const BUILD_TIMESTAMP: &str = env!("BUILD_TIMESTAMP");
 
@@ -73,6 +75,7 @@ async fn main() {
     let mut map = Map::default();
     let mut did_load_map = false;
     let mut decals = DecalManager::default();
+    let mut ui = MainUI::default();
 
     // Try to load specified map from UnrealSoftware.de file archive
     let load_file = util::params::get_app_param_string("file", "");
@@ -128,30 +131,7 @@ async fn main() {
             let scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
             egui_ctx.set_pixels_per_point(scale);
 
-            SETTINGS.with(|s| {
-                let mut settings = s.borrow_mut();
-                egui::Window::new("Settings / Info")
-                    .default_open(false)
-                    .resizable(false)
-                    .show(egui_ctx, |ui| {
-                        ui.checkbox(&mut settings.grid, "Grid");
-                        ui.checkbox(&mut settings.shadows, "Shadows");
-                        ui.checkbox(&mut settings.decals, "Decals");
-                        ui.checkbox(&mut settings.entities, "Entities");
-                        ui.checkbox(&mut settings.entity_fx, "Entity Graphics/FX");
-                        ui.separator();
-                        if ui.button("Resources").clicked() {
-
-                        }
-                        ui.separator();
-                        ui.label(format!("Map: {}", get_filename_without_ext(&map.path)));
-                        ui.label(format!("Size: {}x{}", &map.size.x, &map.size.y));
-                        ui.label(format!("Tiles: {}", get_filename(&map.tile_texture_filename)));
-                        if map.header.author_name.len() > 0 && map.header.author_name != "Player" {
-                            ui.label(format!("Author: {}", &map.header.author_name));
-                        }
-                    });
-            });
+            ui.draw(egui_ctx, &map, &assets);
 
             is_pointer_over_ui = egui_ctx.wants_pointer_input() || egui_ctx.is_pointer_over_area();
         });

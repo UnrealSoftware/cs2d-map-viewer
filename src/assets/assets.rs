@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use macroquad::prelude::*;
 use crate::assets::asset::Asset;
 use crate::assets::asset_id::AssetId;
@@ -12,6 +12,7 @@ pub struct Assets {
 
     pub assets: Vec<Asset>,
     pub lookup: HashMap<String, AssetId>,
+    pub failed: HashSet<String>,
 
     pub shadow_map: TextureSheet,
     pub blend_map: TextureSheet,
@@ -34,6 +35,7 @@ impl Assets {
 
         let assets = Vec::new();
         let lookup = HashMap::new();
+        let failed = HashSet::new();
 
         let shadow_map = loader.load_sheet("gfx/shadowmap.bmp", vec2(32.0, 32.0)).await.unwrap();
         let blend_map = loader.load_sheet("gfx/blendmap.bmp", vec2(32.0, 32.0)).await.unwrap();
@@ -48,6 +50,8 @@ impl Assets {
             loader,
             assets,
             lookup,
+            failed,
+            
             shadow_map,
             blend_map,
             gui_icons,
@@ -71,6 +75,7 @@ impl Assets {
         }
         let tex = self.loader.load_texture(path).await;
         if tex.is_err() {
+            self.failed.insert(path.to_string());
             error!("Failed to load texture '{}': {}", path, tex.err().unwrap());
             return None;
         }
@@ -88,6 +93,7 @@ impl Assets {
         }
         let bytes = self.loader.load_file(path).await;
         if bytes.is_err() {
+            self.failed.insert(path.to_string());
             error!("Failed to load sound '{}': {}", path, bytes.err().unwrap());
             return None;
         }
