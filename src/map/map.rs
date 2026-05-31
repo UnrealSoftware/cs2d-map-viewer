@@ -192,24 +192,18 @@ impl Map {
 
         gl_use_material(&assets.materials.invert);
 
-        // Pre-calculate the starting pixel coordinates
         let start_x_px = start_x as f32 * TILE_SIZE;
         let start_y_px = start_y as f32 * TILE_SIZE;
 
-        // Check if our bounds reach the right/bottom edge of the total grid size
         let close_x = end_x == self.size.x as usize;
         let close_y = end_y == self.size.y as usize;
 
-        // Calculate total continuous line lengths.
-        // If we are at the edge, add 1.0 to close the corner intersection cleanly.
         let grid_w = (end_x - start_x) as f32 * TILE_SIZE + if close_x { 1.0 } else { 0.0 };
         let grid_h = (end_y - start_y) as f32 * TILE_SIZE + if close_y { 1.0 } else { 0.0 };
 
-        // Define iteration limits. Add 1 if we need to draw the final closing line.
         let x_limit = if close_x { end_x + 1 } else { end_x };
         let y_limit = if close_y { end_y + 1 } else { end_y };
 
-        // 1. Draw continuous horizontal lines
         for y in start_y..y_limit {
             draw_rectangle(
                 start_x_px,
@@ -220,7 +214,6 @@ impl Map {
             );
         }
 
-        // 2. Draw continuous vertical lines
         for x in start_x..x_limit {
             draw_rectangle(
                 x as f32 * TILE_SIZE,

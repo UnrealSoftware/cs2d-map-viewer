@@ -15,6 +15,7 @@ pub struct Materials {
     pub light_blend: Material,
     pub shade_blend: Material,
     pub invert: Material,
+    pub tile: Material,
 }
 
 impl Materials {
@@ -227,8 +228,29 @@ impl Materials {
                 },
                 ..Default::default()
             }
-        )
-        .expect("Failed to compile shader material");
+        ).unwrap();
+
+        let tile = load_material(
+            ShaderSource::Glsl {
+                vertex: include_str!("shaders/default.vert"),
+                fragment: include_str!("shaders/tile.frag"),
+            },
+            MaterialParams {
+                uniforms: vec![
+                    UniformDesc::new("uv_scale", UniformType::Float2),
+                    UniformDesc::new("uv_offset", UniformType::Float2),
+                ],
+                pipeline_params: PipelineParams {
+                    color_blend: Some(BlendState::new(
+                        Equation::Add,
+                        BlendFactor::One,
+                        BlendFactor::OneMinusValue(BlendValue::SourceAlpha),
+                    )),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ).unwrap();
 
         Self {
             grayscale_to_alpha,
@@ -241,6 +263,7 @@ impl Materials {
             light_blend,
             shade_blend,
             invert,
+            tile
         }
     }
 

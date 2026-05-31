@@ -219,7 +219,7 @@ async fn main() {
         if draw_decals { decals.update_visible_rect(rect); }
 
         // Draw Level 0 - Background
-        map.background.draw(delta, rect);
+        map.background.draw(delta, rect, &assets);
         // todo: particles level 0
         // todo: Tdo.draw_reset & Tdo.draw_background
 
