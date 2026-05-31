@@ -161,9 +161,9 @@ impl Map {
         assets.materials.use_default();
     }
 
-    pub fn draw_entities(&mut self, delta:f32, rect: Rect, assets: &Assets, level: u8) {
+    pub fn draw_entities(&mut self, delta:f32, rect: Rect, assets: &Assets, level: u8, deco: bool) {
         for entity in &mut self.entities {
-            entity.draw(delta, rect, assets, level);
+            entity.draw(delta, rect, assets, level, deco);
         }
     }
 
@@ -192,38 +192,41 @@ impl Map {
 
         gl_use_material(&assets.materials.invert);
 
-        for y in start_y..end_y {
-            for x in start_x..end_x {
-                draw_rectangle(
-                    x as f32 * TILE_SIZE, y as f32 * TILE_SIZE,
-                    TILE_SIZE, 1.0,
-                    col
-                );
-                draw_rectangle(
-                    x as f32 * TILE_SIZE, y as f32 * TILE_SIZE + 1.0,
-                    1.0, TILE_SIZE - 1.0,
-                    col
-                );
-            }
-        }
+        // Pre-calculate the starting pixel coordinates
+        let start_x_px = start_x as f32 * TILE_SIZE;
+        let start_y_px = start_y as f32 * TILE_SIZE;
 
-        if end_x == self.size.x as usize {
+        // Check if our bounds reach the right/bottom edge of the total grid size
+        let close_x = end_x == self.size.x as usize;
+        let close_y = end_y == self.size.y as usize;
+
+        // Calculate total continuous line lengths.
+        // If we are at the edge, add 1.0 to close the corner intersection cleanly.
+        let grid_w = (end_x - start_x) as f32 * TILE_SIZE + if close_x { 1.0 } else { 0.0 };
+        let grid_h = (end_y - start_y) as f32 * TILE_SIZE + if close_y { 1.0 } else { 0.0 };
+
+        // Define iteration limits. Add 1 if we need to draw the final closing line.
+        let x_limit = if close_x { end_x + 1 } else { end_x };
+        let y_limit = if close_y { end_y + 1 } else { end_y };
+
+        // 1. Draw continuous horizontal lines
+        for y in start_y..y_limit {
             draw_rectangle(
-                end_x as f32 * TILE_SIZE,
-                start_y as f32 * TILE_SIZE,
+                start_x_px,
+                y as f32 * TILE_SIZE,
+                grid_w,
                 1.0,
-                (end_y - start_y) as f32 * TILE_SIZE,
                 col
             );
         }
 
-        if end_y == self.size.y as usize {
-            let corner_closure = if end_x == self.size.x as usize { 1.0 } else { 0.0 };
+        // 2. Draw continuous vertical lines
+        for x in start_x..x_limit {
             draw_rectangle(
-                start_x as f32 * TILE_SIZE,
-                end_y as f32 * TILE_SIZE,
-                (end_x - start_x) as f32 * TILE_SIZE + corner_closure,
+                x as f32 * TILE_SIZE,
+                start_y_px,
                 1.0,
+                grid_h,
                 col
             );
         }

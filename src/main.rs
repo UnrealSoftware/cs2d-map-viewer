@@ -52,6 +52,7 @@ thread_local! {
         decals: true,
         entities: false,
         entity_fx: true,
+        decoration: true,
     });
 }
 
@@ -118,6 +119,7 @@ async fn main() {
     let mut was_pointer_down = false;
 
     loop {
+        let frame_start = get_time();
         let delta = get_frame_time();
 
         let mut is_pointer_over_ui = false;
@@ -137,6 +139,10 @@ async fn main() {
                         ui.checkbox(&mut settings.decals, "Decals");
                         ui.checkbox(&mut settings.entities, "Entities");
                         ui.checkbox(&mut settings.entity_fx, "Entity Graphics/FX");
+                        ui.separator();
+                        if ui.button("Resources").clicked() {
+
+                        }
                         ui.separator();
                         ui.label(format!("Map: {}", get_filename_without_ext(&map.path)));
                         ui.label(format!("Size: {}x{}", &map.size.x, &map.size.y));
@@ -207,6 +213,7 @@ async fn main() {
 
         let entity_fx = SETTINGS.with(|s| s.borrow().entity_fx);
         let draw_decals = SETTINGS.with(|s| s.borrow().decals);
+        let draw_deco = SETTINGS.with(|s| s.borrow().decoration);
 
         map.tile_fx.update(delta);
         if draw_decals { decals.update_visible_rect(rect); }
@@ -223,7 +230,7 @@ async fn main() {
         // Draw Level 2 - Ground
         map.draw(rect, 2);
         if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_FLOOR); }
-        if entity_fx { map.draw_entities(delta, rect, &assets, 0); }
+        if entity_fx { map.draw_entities(delta, rect, &assets, 0, draw_deco); }
         // todo: particles level 2
         // todo: Tdo.draw_ground
         // todo: Tpro.draw_ground(0)
@@ -234,7 +241,7 @@ async fn main() {
         if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_OBSTACLE); }
         // todo: Tdo.draw_obstacle
         // todo: Tpro.draw_ground(1)
-        if entity_fx { map.draw_entities(delta, rect, &assets, 1); }
+        if entity_fx { map.draw_entities(delta, rect, &assets, 1, draw_deco); }
 
         if SETTINGS.with(|s| s.borrow().shadows) {
             map.draw_shadows(rect, &assets);
@@ -254,7 +261,7 @@ async fn main() {
         map.draw(rect, 4);
         if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_WALL); }
         // todo: Tdo.draw_wall
-        if entity_fx { map.draw_entities(delta, rect, &assets, 2); }
+        if entity_fx { map.draw_entities(delta, rect, &assets, 2, draw_deco); }
         // todo: Tdo.draw_overwall
         // todo: particles level 5
         // todo: particles level 7 (?!?!)
@@ -273,8 +280,6 @@ async fn main() {
         if SETTINGS.with(|s| s.borrow().entities) {
             map.draw_entity_info(rect, &assets);
         }
-
-        // UI
 
         set_default_camera();
 
@@ -300,12 +305,25 @@ async fn main() {
             }
         }
 
+        let cpu_time = get_time() - frame_start;
+
         let fps_text = format!("{}", get_fps());
-        let text_dimensions = measure_text(&fps_text, None, 20, 1.0);
+        let mut text_dimensions = measure_text(&fps_text, None, 20, 1.0);
         draw_text(
             &fps_text,
             screen_width() - text_dimensions.width - 10.0,
             10.0 + text_dimensions.offset_y,
+            20.0,
+            GREEN
+        );
+
+        let cpu_ms = cpu_time * 1000.0;
+        let cpu_text =format!("CPU: {:.2} ms", cpu_ms);
+        text_dimensions = measure_text(&cpu_text, None, 20, 1.0);
+        draw_text(
+            &cpu_text,
+            screen_width() - text_dimensions.width - 10.0,
+            10.0 + text_dimensions.offset_y + 20.0,
             20.0,
             GREEN
         );

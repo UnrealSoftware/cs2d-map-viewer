@@ -65,7 +65,7 @@ impl Entity {
         }
     }
 
-    pub fn draw(&mut self, delta: f32, rect: Rect, assets: &Assets, level: u8) {
+    pub fn draw(&mut self, delta: f32, rect: Rect, assets: &Assets, level: u8, deco: bool) {
         match self.entity_type {
             EntityType::EnvSprite => {
                 if /* self.state == 0 ||*/ self.asset_id.is_none() {
@@ -80,8 +80,7 @@ impl Entity {
                     return;
                 }
 
-                // todo: skip decoration
-                // if self.strings[8].len() > 0 { return;}
+                if self.strings[8].len() > 0 && !deco { return; }
 
                 // todo: skip nightvision
                 //if self.strings[5].len() > 0 { return; }
@@ -321,6 +320,17 @@ impl Entity {
     pub fn draw_info(&mut self, assets: &Assets) {
         let x = self.position.x as f32 * TILE_SIZE + (TILE_SIZE - &assets.gui_icons.frame_size.x) * 0.5;
         let y = self.position.y as f32 * TILE_SIZE + (TILE_SIZE - &assets.gui_icons.frame_size.y) * 0.5;
-        assets.gui_icons.draw(x, y, 9, self.entity_type.get_color());
+        let color = self.entity_type.get_color();
+        assets.gui_icons.draw(x, y, 9, color);
+        /*
+        // too slow for many entities
+        draw_text(
+            self.entity_type.get_short_name(),
+            x + 17.0,
+            y + 20.0,
+            12.0,
+            color
+        );
+         */
     }
 }
