@@ -229,33 +229,40 @@ impl Entity {
                         let t = get_time() + x as f64 - y as f64 * 2.1;
 
                         let angle: f32 = 45.0;
-                        let shadow_x = x + angle.to_radians().cos() * 4.0;
-                        let shadow_y = y + angle.to_radians().sin() * 4.0;
+                        let shadow_center_x = x + angle.to_radians().cos() * 4.0;
+                        let shadow_center_y = y + angle.to_radians().sin() * 4.0;
+
+                        let draw_x = x - PIV_X * scale;
+                        let draw_y = y - PIV_Y * scale;
+
+                        let shadow_draw_x = shadow_center_x - PIV_X * scale;
+                        let shadow_draw_y = shadow_center_y - PIV_Y * scale;
 
                         for i in 1..=8 {
                             let rot = base_rot + (i * 45) as f32 + get_anim_degrees(i, t as f32);
                             draw_texture_ex(
                                 &assets.palm_leaf,
-                                shadow_x, shadow_y,
+                                shadow_draw_x, shadow_draw_y,
                                 Color::new(0.0, 0.0, 0.0, 0.3),
                                 DrawTextureParams {
                                     dest_size: Some(size),
                                     rotation: rot.to_radians(),
-                                    pivot: Some(vec2(shadow_x + PIV_X * scale, shadow_y + PIV_Y * scale)),
+                                    pivot: Some(vec2(shadow_center_x, shadow_center_y)),
                                     ..Default::default()
                                 },
                             );
                         }
+
                         for i in 1..=8 {
                             let rot = base_rot + (i * 45) as f32 + get_anim_degrees(i, t as f32);
                             draw_texture_ex(
                                 &assets.palm_leaf,
-                                x, y,
+                                draw_x, draw_y,
                                 col,
                                 DrawTextureParams {
                                     dest_size: Some(size),
                                     rotation: rot.to_radians(),
-                                    pivot: Some(vec2(x + PIV_X * scale, y + PIV_Y * scale)),
+                                    pivot: Some(vec2(x, y)),
                                     ..Default::default()
                                 },
                             );
