@@ -51,6 +51,7 @@ thread_local! {
     pub static SETTINGS: RefCell<Settings> = RefCell::new(Settings {
         grid: false,
         shadows: true,
+        item_shadows: true,
         decals: true,
         entities: false,
         entity_fx: true,
