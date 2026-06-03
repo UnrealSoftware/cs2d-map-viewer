@@ -235,12 +235,17 @@ impl Map {
         };
 
         // Update modes
+        let tile_modes = self.tile_modes.len() as u8;
         if modes {
             for x in a.x..a.x + a.width {
                 for y in a.y..a.y + a. height {
                     let idx = (y * self.size.x as i32 + x) as usize;
                     let frame = self.tiles[idx].frame;
-                    let mode = self.tile_modes[frame as usize];
+                    let mode = if frame < tile_modes {
+                        self.tile_modes[frame as usize]
+                    } else {
+                        TileMode::default()
+                    };
                     self.tiles[idx].mode = mode;
                 }
             }

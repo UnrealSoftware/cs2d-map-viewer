@@ -26,6 +26,7 @@ pub async fn read_map_file(path: &str, map: &mut Map, assets: &mut Assets) -> io
 /// Reads and parses the binary map format from any `Read` source (like a File)
 /// Specs https://www.unrealsoftware.de/files_pub/cs2d_spec_map_format.txt
 pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, assets: &mut Assets) -> io::Result<()> {
+    info!("Reading map file {}...", path);
     type E = LittleEndian;
 
     // --- (1) HEADER
@@ -85,7 +86,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     // More map settings
     let _ = read_string(&mut reader)?; // map code
     let tileset_filename = read_string(&mut reader)?;
-    let tile_count = reader.read_u8()?;
+    let tile_count = (reader.read_u8()? + 1) as usize;
     let width = reader.read_i32::<E>()? + 1;
     let height = reader.read_i32::<E>()? + 1;
     let bg_filename = read_string(&mut reader)?;
@@ -94,6 +95,8 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     let bg_color_r = reader.read_u8()?;
     let bg_color_g = reader.read_u8()?;
     let bg_color_b = reader.read_u8()?;
+
+    info!("Size: {}x{}, Tile Count: {}", width, height, tile_count);
 
     let mut tile_path = String::from(PATH_TILES);
     tile_path.push_str(&tileset_filename);
@@ -105,12 +108,16 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
         }
     };
     tex.set_filter(FilterMode::Nearest);
-    map.tile_texture_filename = tile_path;
+    map.tile_texture_filename = tileset_filename;
     map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
 
-    if !bg_filename.is_empty() {
+    if bg_filename.is_empty() {
+        map.background.filename = String::from("");
+        map.background.texture = None;
+    } else {
         let mut bg_path = String::from(PATH_BACKGROUNDS);
         bg_path.push_str(&bg_filename);
+        map.background.filename = bg_filename;
         map.background.texture = match assets.loader.load_texture(&bg_path).await {
             Ok(texture) => Some(texture),
             Err(err) => {
@@ -119,7 +126,6 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
             }
         };
     }
-    map.background.filename = bg_filename;
     map.background.scroll_speed = IVec2::new(bg_scroll_x, bg_scroll_y);
     map.background.color = Color::from_rgba(bg_color_r, bg_color_g, bg_color_b, 255);
 
@@ -129,29 +135,27 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid post map header string"));
     }
 
-    let tile_it_count = tile_count + 1;
-
     // --- (2) TILE MODES
-    map.tile_modes = vec![TileMode::default(); tile_it_count as usize];
-    map.tile_heights = vec![0; tile_it_count as usize];
-    map.tile_3d_modifiers = vec![0; tile_it_count as usize];
-    for i in 0..tile_it_count {
+    map.tile_modes = vec![TileMode::default(); tile_count];
+    map.tile_heights = vec![0; tile_count];
+    map.tile_3d_modifiers = vec![0; tile_count];
+    for i in 0..tile_count {
         let tile_mode = reader.read_u8()?;
-        map.tile_modes[i as usize] = tile_mode.into();
+        map.tile_modes[i] = tile_mode.into();
     }
 
     // --- (3) TILE HEIGHTS
     if save_tile_heights == 1 {
-        for i in 0..tile_it_count {
+        for i in 0..tile_count {
             let tile_height = reader.read_i32::<E>()?;
-            map.tile_heights[i as usize] = tile_height as u16;
+            map.tile_heights[i] = tile_height as u16;
         }
     } else if save_tile_heights == 2 {
-        for i in 0..tile_it_count {
+        for i in 0..tile_count {
             let tile_height = reader.read_u16::<E>()?;
             let tile_modifier = reader.read_u8()?;
-            map.tile_heights[i as usize] = tile_height;
-            map.tile_3d_modifiers[i as usize] = tile_modifier;
+            map.tile_heights[i] = tile_height;
+            map.tile_3d_modifiers[i] = tile_modifier;
         }
     }
 

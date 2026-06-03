@@ -63,7 +63,7 @@ impl AssetLoader {
                 original_name.to_string()
             };
 
-            self.zip_cache.insert(remapped_name.clone(), buffer);
+            self.zip_cache.insert(remapped_name.clone().to_ascii_lowercase(), buffer);
             loaded_files.push(remapped_name.clone());
             if remap && remapped_name != original_name {
                 info!("unpacked from zip: {} (mapped from {})", remapped_name, original_name);
@@ -98,7 +98,14 @@ impl AssetLoader {
     pub async fn load_texture(&self, path: &str) -> Result<Texture2D, String> {
         info!("loading texture {}", path);
         if let Some(bytes) = self.get_bytes_from_zip(path) {
-            return Ok(Texture2D::from_file_with_format(&bytes, None));
+            match Image::from_file_with_format(&bytes, None) {
+                Ok(image) => {
+                    return Ok(Texture2D::from_image(&image));
+                }
+                Err(err) => {
+                    error!("Failed to decode image from zip {:?}: {}", path, err);
+                }
+            }
         }
 
         load_texture(path)
@@ -107,6 +114,6 @@ impl AssetLoader {
     }
 
     fn get_bytes_from_zip(&self, path: &str) -> Option<&[u8]> {
-        self.zip_cache.get(path).map(|v| v.as_slice())
+        self.zip_cache.get(&path.to_ascii_lowercase()).map(|v| v.as_slice())
     }
 }

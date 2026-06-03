@@ -6,7 +6,6 @@ use crate::map::map::Map;
 use crate::map::reader::read_map_file;
 use crate::paths::{PATH_MAPS};
 use crate::settings::Settings;
-use crate::util::path::{get_filename, get_filename_without_ext};
 
 // fake use of image lib to support bmp without marking lib as unused
 #[allow(unused_imports)]
