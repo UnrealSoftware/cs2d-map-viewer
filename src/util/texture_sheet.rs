@@ -60,11 +60,24 @@ impl TextureSheet {
     pub fn extract_frame_image(&self, frame:u16) -> Image {
         let image = self.texture.get_texture_data();
         let source_rect = self.get_frame_rect(frame);
-        image.sub_image(source_rect)
+        if source_rect.x >= 0.0
+            && source_rect.y >= 0.0
+            && (source_rect.x + source_rect.w) <= image.width() as f32
+            && (source_rect.y + source_rect.h) <= image.height() as f32
+        {
+            image.sub_image(source_rect)
+        } else {
+            // fallback: first frame
+            image.sub_image(self.get_frame_rect(0))
+        }
     }
 
     #[inline(always)]
-    fn get_frame_rect(&self, frame: u16) -> Rect {
+    fn get_frame_rect(&self, mut frame: u16) -> Rect {
+        if frame >= self.frame_count {
+            frame = self.frame_count - 1;
+        }
+
         let frame_x = (frame % self.frames_per_row) as f32;
         let frame_y = (frame / self.frames_per_row) as f32;
 
