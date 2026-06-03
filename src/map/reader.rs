@@ -95,17 +95,29 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     let bg_color_g = reader.read_u8()?;
     let bg_color_b = reader.read_u8()?;
 
-    let mut tile_filename = String::from(PATH_TILES);
-    tile_filename.push_str(&tileset_filename);
-    let tex = assets.loader.load_texture(&tile_filename).await.unwrap();
+    let mut tile_path = String::from(PATH_TILES);
+    tile_path.push_str(&tileset_filename);
+    let tex = match assets.loader.load_texture(&tile_path).await {
+        Ok(texture) => texture,
+        Err(err) => {
+            error!("Failed to load tile texture at {}: {}", tile_path, err);
+            generate_fallback_texture()
+        }
+    };
     tex.set_filter(FilterMode::Nearest);
-    map.tile_texture_filename = tile_filename;
+    map.tile_texture_filename = tile_path;
     map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
 
     if !bg_filename.is_empty() {
         let mut bg_path = String::from(PATH_BACKGROUNDS);
         bg_path.push_str(&bg_filename);
-        map.background.texture = Some(assets.loader.load_texture(&bg_path).await.unwrap());
+        map.background.texture = match assets.loader.load_texture(&bg_path).await {
+            Ok(texture) => Some(texture),
+            Err(err) => {
+                error!("Failed to load background texture at {}: {}", bg_path, err);
+                None
+            }
+        };
     }
     map.background.filename = bg_filename;
     map.background.scroll_speed = IVec2::new(bg_scroll_x, bg_scroll_y);
@@ -232,4 +244,31 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     tile_blend_init(map, assets);
 
     Ok(())
+}
+
+fn generate_fallback_texture() -> Texture2D {
+    const TILES_XY: u16 = 16;
+    const IMG_SIZE: u16 = TILE_SIZE as u16 * TILES_XY;
+
+    let mut image = Image::gen_image_color(IMG_SIZE, IMG_SIZE, BLANK);
+
+    let bright_red = Color::from_rgba(255, 0, 0, 255);
+    let dark_red = Color::from_rgba(128, 0, 0, 255);
+
+    for y in 0..IMG_SIZE {
+        for x in 0..IMG_SIZE {
+            let tile_x = x / TILE_SIZE as u16;
+            let tile_y = y / TILE_SIZE as u16;
+
+            let color = if (tile_x + tile_y) % 2 == 0 {
+                bright_red
+            } else {
+                dark_red
+            };
+
+            image.set_pixel(x as u32, y as u32, color);
+        }
+    }
+
+    Texture2D::from_image(&image)
 }

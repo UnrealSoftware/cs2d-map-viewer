@@ -278,9 +278,7 @@ impl Entity {
     pub fn draw_palm_tree(&mut self, x: f32, y: f32, assets: &Assets) {
         let base_rot = self.ints[4] as f32;
         let scale = self.strings[1].parse().unwrap_or(1.0) * 0.8;
-        let size = vec2(
-            &assets.palm_leaf.width() * scale,
-            &assets.palm_leaf.height() * scale);
+        let size = assets.palm_leaf.size() * scale;
 
         let r = self.ints[1] as u8;
         let g = self.ints[2] as u8;
@@ -346,7 +344,7 @@ impl Entity {
     }
 
     pub fn draw_leaf_tree(&mut self, x: f32, y: f32, assets: &Assets) {
-        let scale = self.strings[0].parse().unwrap_or(0.0);
+        let scale = self.strings[0].parse().unwrap_or(1.0);
         let alpha = self.strings[1].parse().unwrap_or(1.0);
         let base_rot = self.ints[4] as f32;
 
