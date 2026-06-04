@@ -86,7 +86,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     // More map settings
     let _ = read_string(&mut reader)?; // map code
     let tileset_filename = read_string(&mut reader)?;
-    let tile_count = (reader.read_u8()? + 1) as usize;
+    let tile_count = (reader.read_u8()? as usize) + 1;
     let width = reader.read_i32::<E>()? + 1;
     let height = reader.read_i32::<E>()? + 1;
     let bg_filename = read_string(&mut reader)?;
@@ -108,8 +108,9 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
         }
     };
     tex.set_filter(FilterMode::Nearest);
+    let tile_pixel_size = if use_64_pixel_tiles { 64.0 } else { 32.0 };
     map.tile_texture_filename = tileset_filename;
-    map.tile_texture = Option::from(TextureSheet::new(tex, vec2(TILE_SIZE, TILE_SIZE)));
+    map.tile_texture = Option::from(TextureSheet::new(tex, vec2(tile_pixel_size, tile_pixel_size)));
 
     if bg_filename.is_empty() {
         map.background.filename = String::from("");
@@ -117,6 +118,7 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
     } else {
         let mut bg_path = String::from(PATH_BACKGROUNDS);
         bg_path.push_str(&bg_filename);
+        if !bg_filename.contains(".") { bg_path.push_str(".jpg"); }
         map.background.filename = bg_filename;
         map.background.texture = match assets.loader.load_texture(&bg_path).await {
             Ok(texture) => Some(texture),
@@ -217,11 +219,11 @@ pub async fn read_map_bytes<R: Read>(mut reader: R, path: &str, map: &mut Map, a
 
         let mut ints: [i32; 10] = Default::default();
         let mut strings: [String; 10] = Default::default();
-        for i in 0..10 {
+        for j in 0..10 {
             let entity_int = reader.read_i32::<E>()?;
             let entity_str = read_string(&mut reader)?;
-            ints[i] = entity_int;
-            strings[i] = entity_str;
+            ints[j] = entity_int;
+            strings[j] = entity_str;
         }
 
         let mut entity = Entity::new(

@@ -446,11 +446,11 @@ impl Map {
 
     #[inline]
     pub fn get_update_bounds(&self, rect: Rect) -> (usize, usize, usize, usize) {
-        let start_x = (rect.x / TILE_SIZE).floor() as usize;
-        let start_y = (rect.y / TILE_SIZE).floor() as usize;
+        let start_x = (rect.x.max(0.0) / TILE_SIZE).floor() as usize;
+        let start_y = (rect.y.max(0.0) / TILE_SIZE).floor() as usize;
 
-        let end_x = ((rect.right() / TILE_SIZE).ceil() as usize).min(self.size.x as usize);
-        let end_y = ((rect.bottom() / TILE_SIZE).ceil() as usize).min(self.size.y as usize);
+        let end_x = ((rect.right().max(0.0) / TILE_SIZE).ceil() as usize).min(self.size.x as usize);
+        let end_y = ((rect.bottom().max(0.0) / TILE_SIZE).ceil() as usize).min(self.size.y as usize);
 
         (start_x, start_y, end_x, end_y)
     }
