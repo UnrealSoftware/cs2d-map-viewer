@@ -38,13 +38,15 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn draw(&mut self, rect: Rect, level: u8) {
+    pub fn draw(&mut self, rect: Rect, assets: &Assets, level: u8) {
         const RAD90: f32 = std::f32::consts::FRAC_PI_2;
         const RAD180: f32 = std::f32::consts::PI;
 
         let tex = self.tile_texture.as_ref().unwrap();
         let size = vec2(TILE_SIZE, TILE_SIZE);
         let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
+
+        gl_use_material(&assets.materials.mask_magenta);
 
         for y in start_y..end_y {
             for x in start_x..end_x {
@@ -86,7 +88,7 @@ impl Map {
                         }
                     }
 
-                    // Blending
+                    // Blended Tile
                     if modifier >= 64 {
                         let blend_idx = self.modifiers[idx].blend as usize;
                         if blend_idx < self.tile_blend.len() {
@@ -137,6 +139,8 @@ impl Map {
                 }
             }
         }
+
+        assets.materials.use_default();
     }
 
     pub fn draw_shadows(&mut self, rect: Rect, assets: &Assets) {

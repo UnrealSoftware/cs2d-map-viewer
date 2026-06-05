@@ -204,11 +204,11 @@ async fn main() {
         // todo: Tdo.draw_reset & Tdo.draw_background
 
         // Draw Level 1 - Water
-        map.draw(rect, 1);
+        map.draw(rect, &assets, 1);
         // todo: particles level 1
 
         // Draw Level 2 - Ground
-        map.draw(rect, 2);
+        map.draw(rect,  &assets, 2);
         if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_FLOOR); }
         if entity_fx { map.draw_entities(delta, rect, &assets, 0, draw_deco); }
         // todo: particles level 2
@@ -217,7 +217,7 @@ async fn main() {
 
         // Draw Level 3 - Items / Obstacles / Shadows
         // todo: Titem.draw
-        map.draw(rect, 3);
+        map.draw(rect,  &assets, 3);
         if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_OBSTACLE); }
         // todo: Tdo.draw_obstacle
         // todo: Tpro.draw_ground(1)
@@ -238,7 +238,7 @@ async fn main() {
         // todo: particles level 4
 
         // Draw Level 5 - Walls / Entities
-        map.draw(rect, 4);
+        map.draw(rect,  &assets,4);
         if draw_decals { decals.draw(&assets, map::decal::DECAL_LEVEL_WALL); }
         // todo: Tdo.draw_wall
         if entity_fx { map.draw_entities(delta, rect, &assets, 2, draw_deco); }
