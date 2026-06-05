@@ -277,7 +277,7 @@ impl Entity {
 
     pub fn draw_palm_tree(&mut self, x: f32, y: f32, assets: &Assets) {
         let base_rot = self.ints[4] as f32;
-        let scale = self.strings[1].parse().unwrap_or(1.0) * 0.8;
+        let scale = self.strings[0].parse().unwrap_or(1.0) * 0.8;
         let size = assets.palm_leaf.size() * scale;
 
         let r = self.ints[1] as u8;
