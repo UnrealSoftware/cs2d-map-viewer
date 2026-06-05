@@ -54,15 +54,13 @@ impl Entity {
             }
             EntityType::EnvSound => {
                 let path = self.strings[0].as_str();
-                assets.load_sound(path).await;
-                let asset_id = assets.load_texture(path).await;
+                let asset_id = assets.load_sound(path).await;
                 self.asset_id = asset_id;
             }
-            EntityType::EnvDecal => {
-
-            }
             EntityType::EnvImage => {
-
+                let path = self.strings[0].as_str();
+                let asset_id = assets.load_texture(path).await;
+                self.asset_id = asset_id;
             }
             _ => {}
         }
