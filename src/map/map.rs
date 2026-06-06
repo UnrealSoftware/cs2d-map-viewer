@@ -9,9 +9,14 @@ use crate::map::tile::Tile;
 use crate::map::tile_modifiers::TileModifiers;
 use crate::map::entity_type::EntityType;
 use crate::map::tile_mode::TileMode;
+use crate::map::tile_walkability::TileWalkability;
 use crate::util::recti::RectI;
 use crate::util::texture_sheet::TextureSheet;
 use crate::TILE_SIZE;
+use crate::ui::ui_icon::UiIcon;
+
+const RAD90: f32 = std::f32::consts::FRAC_PI_2;
+const RAD180: f32 = std::f32::consts::PI;
 
 #[derive(Debug, Default)]
 pub struct Map {
@@ -39,8 +44,6 @@ pub struct Map {
 
 impl Map {
     pub fn draw(&mut self, rect: Rect, assets: &Assets, level: u8) {
-        const RAD90: f32 = std::f32::consts::FRAC_PI_2;
-        const RAD180: f32 = std::f32::consts::PI;
 
         let tex = self.tile_texture.as_ref().unwrap();
         let size = vec2(TILE_SIZE, TILE_SIZE);
@@ -62,31 +65,8 @@ impl Map {
                 let modifier = tile.modifier;
 
                 if modifier > 0 {
-                    // Rotation: Bit 1 & 2
-                    if (modifier & 1) == 1 {
-                        rot += RAD90;
-                    }
-                    if (modifier & 2) == 2 {
-                        rot += RAD180;
-                    }
-
-                    // Color
-                    if (modifier & 192) == 128 {
-                        color = self.modifiers[idx].rgb.to_color();
-                    }
-
-                    // Brightness
-                    if modifier > 3 {
-                        let mut br: f32 = ((modifier & 60) >> 2) as f32;
-                        if br > 0.0 {
-                            br /= 10.0;
-                            color = Color::new(
-                                color.r * br,
-                                color.g * br,
-                                color.b * br,
-                                1.0);
-                        }
-                    }
+                    rot = get_tile_rotation(modifier);
+                    color = self.get_tile_color(modifier, idx);
 
                     // Blended Tile
                     if modifier >= 64 {
@@ -231,6 +211,90 @@ impl Map {
         assets.materials.use_default();
     }
 
+    pub fn draw_tile_overlays(&mut self, rect: Rect, assets: &Assets) {
+        let (start_x, start_y, end_x, end_y) = self.get_update_bounds(rect);
+
+        gl_use_material(&assets.materials.light_blend);
+
+        for y in start_y..end_y {
+            for x in start_x..end_x {
+                let idx = y * self.size.x as usize + x;
+                let tile = &self.tiles[idx];
+                let tx = x as f32 * TILE_SIZE;
+                let ty = y as f32 * TILE_SIZE;
+
+                match tile.mode.get_walkability() {
+                    TileWalkability::Wall => draw_rectangle(tx, ty, TILE_SIZE, TILE_SIZE, Color::from_rgba(128, 0, 0, 255)),
+                    TileWalkability::Obstacle => draw_rectangle(tx, ty, TILE_SIZE, TILE_SIZE, Color::from_rgba(128, 64, 0, 255)),
+                    TileWalkability::Deadly => {
+                        let red = Color::from_rgba(255, 0, 0, 255);
+                        draw_line(tx + 5.0, ty + 5.0, tx + 27.0, ty + 27.0, 5.0, red);
+                        draw_line(tx + 27.0, ty + 5.0, tx + 5.0, ty + 27.0, 5.0, red);
+                    }
+                    _ => {}
+                }
+
+                let modifier = tile.modifier;
+                if modifier > 0 {
+                    // Rotation
+                    if modifier & (1 + 2) > 0 {
+                        let mut rot_frame: u16 = 0;
+                        if modifier & 1 == 1 {
+                            rot_frame = 1;
+                            if modifier & 2 == 2 {
+                                rot_frame = 3;
+                            }
+                        } else {
+                            rot_frame = 2;
+                        }
+                        assets.gui_icons.draw(
+                            tx, ty,
+                            UiIcon::ArrowUp as u16 + rot_frame,
+                            Color::from_rgba(0, 255,0, 255));
+                    }
+
+                    // Brightness
+                    if modifier & (1 + 2) > 3 {
+                        if ((modifier & (4 + 8 + 16 + 32)) >> 2) > 0 {
+                            assets.gui_icons.draw(
+                                tx, ty + 16.0,
+                                UiIcon::Entity as u16,
+                                Color::from_rgba(255, 0,0, 255));
+                        }
+                    }
+
+                    if modifier & (64 + 128) == 64 {
+                        // Blending
+                        let blend_frame = &self.modifiers[idx].frame % 8;
+                        let icon_frame = match blend_frame {
+                            0 => UiIcon::ArrowUp,
+                            1 => UiIcon::ArrowUpRight,
+                            2 => UiIcon::ArrowRight,
+                            3 => UiIcon::ArrowDownRight,
+                            4 => UiIcon::ArrowDown,
+                            5 => UiIcon::ArrowDownLeft,
+                            6 => UiIcon::ArrowLeft,
+                            7 => UiIcon::ArrowUpLeft,
+                            _ => UiIcon::X
+                        } as u16;
+                        assets.gui_icons.draw(
+                            tx + 8.0, ty + 8.0,
+                            icon_frame,
+                            Color::from_rgba(255, 128,0, 255));
+                    } else if modifier & (64 + 128) == 128 {
+                        // Color
+                        assets.gui_icons.draw(
+                            tx + 19.0, ty,
+                            UiIcon::Fill as u16,
+                            Color::from_rgba(255, 0,0, 255));
+                    }
+                }
+            }
+        }
+
+        assets.materials.use_default();
+    }
+
     pub fn map_update(&mut self, modes: bool, shadows: bool, entities: bool, area : Option<RectI>) {
         let a: RectI = if area.is_none() {
             RectI::new(0, 0, self.size.x as i32, self.size.y as i32)
@@ -257,73 +321,74 @@ impl Map {
 
         // Update shadows
         if shadows {
+            const UNDEFINED: u8 = 255;
             const NORMAL: TileMode = TileMode::Normal;
             const WALL: TileMode = TileMode::Wall;
             const OBSTACLE: TileMode = TileMode::Obstacle;
+
             for x in 0..self.size.x {
                 for y in 0..self.size.y {
                     let idx = (y * self.size.x + x) as usize;
-                    self.shadows[idx] = 255;
-                    if x > 0 && y > 0 {
-                        let mode = self.tiles[idx].mode;
-                        if mode == WALL || mode == OBSTACLE || mode == NORMAL {
-                            // no shadow
-                        } else {
-                            // x shadow
-                            let idx_left = (y * self.size.x + x - 1) as usize;
-                            if self.tiles[idx_left].mode == WALL { self.shadows[idx] = 6 }
-                            if self.tiles[idx_left].mode == OBSTACLE { self.shadows[idx] = 7 }
+                    self.shadows[idx] = UNDEFINED;
 
-                            // y shadow
-                            let idx_top = ((y - 1) * self.size.x + x) as usize;
-                            if self.tiles[idx_top].mode == WALL {
-                                if self.shadows[idx] == 255 { self.shadows[idx] = 0 }
-                                if self.shadows[idx] == 6 { self.shadows[idx] = 10 }
-                                if self.shadows[idx] == 7 { self.shadows[idx] = 11 }
-                            } else if self.tiles[idx_top].mode == OBSTACLE {
-                                if self.shadows[idx] == 255 { self.shadows[idx] = 1 }
-                                if self.shadows[idx] == 6 { self.shadows[idx] = 12 }
-                                if self.shadows[idx] == 7 { self.shadows[idx] = 13 }
-                            }
+                    if x <= 0 || y <= 0 { continue; }
 
-                            let idx_topleft = ((y - 1) * self.size.x + x - 1) as usize;
+                    let mode = self.tiles[idx].mode;
+                    if mode == WALL || mode == OBSTACLE || mode == NORMAL { continue; }
 
-                            // shadow edges
-                            if self.shadows[idx] == 255 {
-                                if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 4 }
-                                if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 5 }
-                            }
+                    // x shadow
+                    let idx_left = (y * self.size.x + x - 1) as usize;
+                    if self.tiles[idx_left].mode == WALL { self.shadows[idx] = 6 }
+                    if self.tiles[idx_left].mode == OBSTACLE { self.shadows[idx] = 7 }
 
-                            // round off x edges
-                            if self.shadows[idx] == 0 || self.shadows[idx] == 1 {
-                                let mode = self.tiles[idx_topleft].mode;
-                                if mode != WALL && mode != OBSTACLE {
-                                    self.shadows[idx] += 2;
-                                }
-                            }
+                    // y shadow
+                    let idx_top = ((y - 1) * self.size.x + x) as usize;
+                    if self.tiles[idx_top].mode == WALL {
+                        if self.shadows[idx] == UNDEFINED { self.shadows[idx] = 0 }
+                        if self.shadows[idx] == 6 { self.shadows[idx] = 10 }
+                        if self.shadows[idx] == 7 { self.shadows[idx] = 11 }
+                    } else if self.tiles[idx_top].mode == OBSTACLE {
+                        if self.shadows[idx] == UNDEFINED { self.shadows[idx] = 1 }
+                        if self.shadows[idx] == 6 { self.shadows[idx] = 12 }
+                        if self.shadows[idx] == 7 { self.shadows[idx] = 13 }
+                    }
 
-                            // round off y edges
-                            if self.shadows[idx] == 6 || self.shadows[idx] == 7 {
-                                let mode = self.tiles[idx_topleft].mode;
-                                if mode != WALL && mode != OBSTACLE {
-                                    self.shadows[idx] += 2;
-                                }
-                            }
+                    let idx_topleft = ((y - 1) * self.size.x + x - 1) as usize;
 
-                            // x edge mixed
-                            if self.shadows[idx] == 0 {
-                                if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 16 }
-                            } else if self.shadows[idx] == 1 {
-                                if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 17 }
-                            }
+                    // shadow edges
+                    if self.shadows[idx] == UNDEFINED {
+                        if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 4 }
+                        if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 5 }
+                    }
 
-                            // y edge mixed
-                            if self.shadows[idx] == 6 {
-                                if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 14 }
-                            } else if self.shadows[idx] == 7 {
-                                if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 15 }
-                            }
+                    // round off x edges
+                    if self.shadows[idx] == 0 || self.shadows[idx] == 1 {
+                        let mode = self.tiles[idx_topleft].mode;
+                        if mode != WALL && mode != OBSTACLE {
+                            self.shadows[idx] += 2;
                         }
+                    }
+
+                    // round off y edges
+                    if self.shadows[idx] == 6 || self.shadows[idx] == 7 {
+                        let mode = self.tiles[idx_topleft].mode;
+                        if mode != WALL && mode != OBSTACLE {
+                            self.shadows[idx] += 2;
+                        }
+                    }
+
+                    // x edge mixed
+                    if self.shadows[idx] == 0 {
+                        if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 16 }
+                    } else if self.shadows[idx] == 1 {
+                        if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 17 }
+                    }
+
+                    // y edge mixed
+                    if self.shadows[idx] == 6 {
+                        if self.tiles[idx_topleft].mode == OBSTACLE { self.shadows[idx] = 14 }
+                    } else if self.shadows[idx] == 7 {
+                        if self.tiles[idx_topleft].mode == WALL { self.shadows[idx] = 15 }
                     }
                 }
             }
@@ -458,4 +523,41 @@ impl Map {
 
         (start_x, start_y, end_x, end_y)
     }
+
+    #[inline]
+    pub fn get_tile_color(&self, modifier: u8, idx: usize) -> Color {
+        let mut color: Color = WHITE;
+
+        // Color
+        if (modifier & 192) == 128 {
+            color = self.modifiers[idx].rgb.to_color();
+        }
+
+        // Brightness
+        if modifier > 3 {
+            let mut br: f32 = ((modifier & (4 + 8 + 16 + 32)) >> 2) as f32;
+            if br > 0.0 {
+                br /= 10.0;
+                color = Color::new(
+                    color.r * br,
+                    color.g * br,
+                    color.b * br,
+                    1.0);
+            }
+        }
+
+        color
+    }
+}
+
+#[inline]
+fn get_tile_rotation(modifier: u8) -> f32 {
+    let mut rot = 0.0;
+    if (modifier & 1) == 1 {
+        rot += RAD90;
+    }
+    if (modifier & 2) == 2 {
+        rot += RAD180;
+    }
+    rot
 }

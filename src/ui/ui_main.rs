@@ -46,6 +46,7 @@ impl MainUI {
                     ui.checkbox(&mut settings.decals, "Decals");
                     ui.checkbox(&mut settings.entities, "Entities");
                     ui.checkbox(&mut settings.entity_fx, "Entity Graphics/FX");
+                    ui.checkbox(&mut settings.tile_overlays, "Tile Overlays");
                     ui.separator();
                     ui.horizontal(|ui| {
                         if ui.button("Resources").clicked() {

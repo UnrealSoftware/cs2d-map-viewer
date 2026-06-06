@@ -55,6 +55,7 @@ thread_local! {
         entities: false,
         entity_fx: true,
         decoration: true,
+        tile_overlays: false,
     });
 }
 
@@ -159,6 +160,12 @@ async fn main() {
                 });
             }
 
+            if is_key_released(KeyCode::Space) {
+                SETTINGS.with(|s| {
+                    let mut settings = s.borrow_mut();
+                    settings.tile_overlays = !settings.tile_overlays;
+                });
+            }
 
             let current_pos: (f32, f32);
             let pointer_down: bool;
@@ -260,7 +267,10 @@ async fn main() {
         // todo: fow
         // todo: night vision overlay
 
-
+        if SETTINGS.with(|s| s.borrow().tile_overlays) {
+            map.draw_tile_overlays(rect, &assets);
+        }
+        
         if SETTINGS.with(|s| s.borrow().grid) {
             map.draw_grid(rect, &assets);
         }

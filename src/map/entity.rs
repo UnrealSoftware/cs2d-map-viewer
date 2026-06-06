@@ -3,6 +3,7 @@ use crate::assets::assets::Assets;
 use crate::assets::asset_id::AssetId;
 use crate::map::entity_type::EntityType;
 use crate::TILE_SIZE;
+use crate::ui::ui_icon::UiIcon;
 
 const STATE_ACTIVE: u8 = 0;
 const STATE_INACTIVE : u8 = 1;
@@ -257,10 +258,11 @@ impl Entity {
     }
 
     pub fn draw_info(&mut self, assets: &Assets) {
-        let x = self.position.x as f32 * TILE_SIZE + (TILE_SIZE - &assets.gui_icons.frame_size.x) * 0.5;
-        let y = self.position.y as f32 * TILE_SIZE + (TILE_SIZE - &assets.gui_icons.frame_size.y) * 0.5;
+        let size = &assets.gui_icons.frame_size;
+        let x = self.position.x as f32 * TILE_SIZE + (TILE_SIZE - size.x) * 0.5;
+        let y = self.position.y as f32 * TILE_SIZE + (TILE_SIZE - size.y) * 0.5;
         let color = self.entity_type.get_color();
-        assets.gui_icons.draw(x, y, 9, color);
+        assets.gui_icons.draw(x, y, UiIcon::Entity as u16, color);
         /*
         // too slow for many entities
         draw_text(

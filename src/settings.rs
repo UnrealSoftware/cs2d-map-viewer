@@ -7,4 +7,5 @@ pub struct Settings {
     pub entities: bool,
     pub entity_fx: bool,
     pub decoration: bool,
+    pub tile_overlays: bool,
 }
