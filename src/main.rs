@@ -22,6 +22,14 @@ mod paths;
 mod settings;
 pub mod ui;
 
+// force to use dedicated GPU if available
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub static NvOptimusEnablement: i32 = 1;
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub static AmdPowerXpressRequestHighPerformance: i32 = 1;
+
 const BUILD_TIMESTAMP: &str = env!("BUILD_TIMESTAMP");
 
 pub const TILE_SIZE: f32 = 32.0;
@@ -270,7 +278,7 @@ async fn main() {
         if SETTINGS.with(|s| s.borrow().tile_overlays) {
             map.draw_tile_overlays(rect, &assets);
         }
-        
+
         if SETTINGS.with(|s| s.borrow().grid) {
             map.draw_grid(rect, &assets);
         }
