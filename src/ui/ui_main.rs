@@ -3,8 +3,9 @@ use egui::Context;
 use crate::assets::assets::Assets;
 use crate::map::map::Map;
 use crate::map::entity_type::EntityType;
-use crate::SETTINGS;
+use crate::{SETTINGS, TILE_SIZE};
 use crate::util::path::{get_filename, get_filename_without_ext};
+use macroquad::math::Vec2;
 
 #[derive(Debug, Default)]
 pub struct MainUI {
@@ -16,10 +17,11 @@ pub struct MainUI {
 }
 
 impl MainUI {
-    pub fn draw(&mut self, egui_ctx: &Context, map: &Map, assets: &Assets) {
+    pub fn draw(&mut self, egui_ctx: &Context, map: &Map, assets: &Assets, world_target: &mut Vec2) {
         SETTINGS.with(|s| {
             let mut settings = s.borrow_mut();
 
+            // Main UI Window
             egui::Window::new("Settings / Info")
                 .default_open(false)
                 .resizable(false)
@@ -62,9 +64,11 @@ impl MainUI {
                     }
                 });
 
+            // Resources List
             if self.show_resources {
+                let mut show_res = self.show_resources;
                 egui::Window::new("Resources")
-                    .open(&mut self.show_resources)
+                    .open(&mut show_res)
                     .resizable(true)
                     .show(egui_ctx, |ui| {
 
@@ -80,20 +84,7 @@ impl MainUI {
                                 .auto_shrink([false, false])
                                 .show(ui, |ui| {
                                     for (path, _) in &assets.lookup {
-                                        ui.horizontal(|ui| {
-                                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                                let lower_path = path.to_lowercase();
-                                                let users = self.resource_users.get(&lower_path);
-                                                let user_count = if users.is_some() { users.unwrap().len() } else { 0 };
-                                                if ui.button(format!("{}", user_count)).clicked() {
-                                                    self.show_users_of = Some(lower_path.clone());
-                                                    self.show_users = true;
-                                                }
-                                                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                                                    ui.add(egui::Label::new(path));
-                                                });
-                                            });
-                                        });
+                                        self.draw_resource_row(ui, path);
                                     }
                                 });
                         } else {
@@ -101,32 +92,22 @@ impl MainUI {
                                 .auto_shrink([false, false])
                                 .show(ui, |ui| {
                                     for path in &assets.failed {
-                                        ui.horizontal(|ui| {
-                                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                                let lower_path = path.to_lowercase();
-                                                let users = self.resource_users.get(&lower_path);
-                                                let user_count = if users.is_some() { users.unwrap().len() } else { 0 };
-                                                if ui.button(format!("{}", user_count)).clicked() {
-                                                    self.show_users_of = Some(lower_path.clone());
-                                                    self.show_users = true;
-                                                }
-                                                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                                                    ui.add(egui::Label::new(path));
-                                                });
-                                            });
-                                        });
+                                        self.draw_resource_row(ui, path);
                                     }
                                 });
                         }
                     });
+                self.show_resources = show_res;
             }
 
+            // Resource Users
             if self.show_users && self.show_users_of.is_some() {
                 egui::Window::new("Resource Users")
                     .open(&mut self.show_users)
                     .resizable(true)
                     .show(egui_ctx, |ui| {
                         ui.label(format!("'{}' is used by:", self.show_users_of.as_ref().unwrap()));
+                        ui.separator();
                         let lower_path = self.show_users_of.as_ref().unwrap().to_lowercase();
                         let users = self.resource_users.get(&lower_path);
                         egui::ScrollArea::vertical()
@@ -134,11 +115,33 @@ impl MainUI {
                             .show(ui, |ui| {
                                 for user in users.unwrap().clone() {
                                     let entity = &map.entities[user];
-                                    ui.label(format!("{} @ {}x{}", entity.entity_type.get_name(), entity.position.x, entity.position.y));
+                                    let btn = egui::Button::new(format!("{} @ {}x{}", entity.entity_type.get_name(), entity.position.x, entity.position.y));
+                                    if ui.add_sized([ui.available_width(), ui.spacing().interact_size.y], btn).clicked() {
+                                        world_target.x = entity.position.x as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+                                        world_target.y = entity.position.y as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+                                    }
                                 }
                             });
                     });
             }
+        });
+    }
+
+    fn draw_resource_row(&mut self, ui: &mut egui::Ui, path: &str) {
+        ui.horizontal(|ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let lower_path = path.to_lowercase();
+                let users = self.resource_users.get(&lower_path);
+                let user_count = if users.is_some() { users.unwrap().len() } else { 0 };
+                let btn = egui::Button::new(format!("{}", user_count));
+                if ui.add_sized([45.0, ui.spacing().interact_size.y], btn).clicked() {
+                    self.show_users_of = Some(lower_path.clone());
+                    self.show_users = true;
+                }
+                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                    ui.add(egui::Label::new(path));
+                });
+            });
         });
     }
 }

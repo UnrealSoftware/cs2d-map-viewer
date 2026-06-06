@@ -24,7 +24,7 @@ pub mod ui;
 
 const BUILD_TIMESTAMP: &str = env!("BUILD_TIMESTAMP");
 
-const TILE_SIZE: f32 = 32.0;
+pub const TILE_SIZE: f32 = 32.0;
 const MAP_WIDTH: i32 = 50;
 const MAP_HEIGHT: i32 = 50;
 const MOVE_SPEED: f32 = 500.0;
@@ -131,7 +131,7 @@ async fn main() {
             let scale = (screen_width() / GAME_WIDTH).min(screen_height() / GAME_HEIGHT);
             egui_ctx.set_pixels_per_point(scale);
 
-            ui.draw(egui_ctx, &map, &assets);
+            ui.draw(egui_ctx, &map, &assets, &mut world_target);
 
             is_pointer_over_ui = egui_ctx.wants_pointer_input() || egui_ctx.is_pointer_over_area();
         });
