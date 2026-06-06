@@ -3,6 +3,7 @@ use egui::Context;
 use crate::assets::assets::Assets;
 use crate::map::map::Map;
 use crate::map::entity_type::EntityType;
+use crate::map::entity::Entity;
 use crate::{SETTINGS, TILE_SIZE};
 use crate::util::path::{get_filename, get_filename_without_ext};
 use macroquad::math::Vec2;
@@ -13,11 +14,23 @@ pub struct MainUI {
     resource_users: HashMap<String, Vec<usize>>,
     res_tab: i32,
     show_users_of: Option<String>,
-    show_users: bool
+    show_users: bool,
+    show_entities: bool,
+    cached_loaded: Vec<String>,
+    cached_missing: Vec<String>
 }
 
 impl MainUI {
     pub fn draw(&mut self, egui_ctx: &Context, map: &Map, assets: &Assets, world_target: &mut Vec2) {
+        if self.cached_loaded.len() != assets.lookup.len() {
+            self.cached_loaded = assets.lookup.keys().cloned().collect();
+            self.cached_loaded.sort();
+        }
+        if self.cached_missing.len() != assets.failed.len() {
+            self.cached_missing = assets.failed.iter().cloned().collect();
+            self.cached_missing.sort();
+        }
+
         SETTINGS.with(|s| {
             let mut settings = s.borrow_mut();
 
@@ -32,29 +45,36 @@ impl MainUI {
                     ui.checkbox(&mut settings.entities, "Entities");
                     ui.checkbox(&mut settings.entity_fx, "Entity Graphics/FX");
                     ui.separator();
-                    if ui.button("Resources").clicked() {
-                        self.show_resources = !self.show_resources;
-                        self.resource_users.clear();
-                        for i in 0..map.entities.len() {
-                            match map.entities[i].entity_type {
-                                EntityType::EnvSprite | EntityType::EnvSound | EntityType::EnvImage => {
-                                    let path = map.entities[i].strings[0].to_lowercase();
-                                    if path.is_empty() {
-                                       continue;
+                    ui.horizontal(|ui| {
+                        if ui.button("Resources").clicked() {
+                            self.show_resources = !self.show_resources;
+                            self.resource_users.clear();
+                            self.cached_loaded.clear();
+                            self.cached_missing.clear();
+                            for i in 0..map.entities.len() {
+                                match map.entities[i].entity_type {
+                                    EntityType::EnvSprite | EntityType::EnvSound | EntityType::EnvImage => {
+                                        let path = map.entities[i].strings[0].to_lowercase();
+                                        if path.is_empty() {
+                                           continue;
+                                        }
+                                        let users = self.resource_users.get_mut(&path);
+                                        if users.is_some() {
+                                            users.unwrap().push(i);
+                                        } else {
+                                            let mut new_users = Vec::new();
+                                            new_users.push(i);
+                                            self.resource_users.insert(path.clone(), new_users);
+                                        }
                                     }
-                                    let users = self.resource_users.get_mut(&path);
-                                    if users.is_some() {
-                                        users.unwrap().push(i);
-                                    } else {
-                                        let mut new_users = Vec::new();
-                                        new_users.push(i);
-                                        self.resource_users.insert(path.clone(), new_users);
-                                    }
+                                    _ => {}
                                 }
-                                _ => {}
                             }
                         }
-                    }
+                        if ui.button("Entities").clicked() {
+                            self.show_entities = !self.show_entities;
+                        }
+                    });
                     ui.separator();
                     ui.label(format!("Map: {}", get_filename_without_ext(&map.path)));
                     ui.label(format!("Size: {}x{}", &map.size.x, &map.size.y));
@@ -80,19 +100,25 @@ impl MainUI {
                         ui.separator();
 
                         if self.res_tab == 0 {
+                            let row_height = ui.spacing().interact_size.y;
+                            let num_rows = self.cached_loaded.len();
                             egui::ScrollArea::vertical()
                                 .auto_shrink([false, false])
-                                .show(ui, |ui| {
-                                    for (path, _) in &assets.lookup {
-                                        self.draw_resource_row(ui, path);
+                                .show_rows(ui, row_height, num_rows, |ui, row_range| {
+                                    for idx in row_range {
+                                        let path = self.cached_loaded[idx].clone();
+                                        self.draw_resource_row(ui, &path);
                                     }
                                 });
                         } else {
+                            let row_height = ui.spacing().interact_size.y;
+                            let num_rows = self.cached_missing.len();
                             egui::ScrollArea::vertical()
                                 .auto_shrink([false, false])
-                                .show(ui, |ui| {
-                                    for path in &assets.failed {
-                                        self.draw_resource_row(ui, path);
+                                .show_rows(ui, row_height, num_rows, |ui, row_range| {
+                                    for idx in row_range {
+                                        let path = self.cached_missing[idx].clone();
+                                        self.draw_resource_row(ui, &path);
                                     }
                                 });
                         }
@@ -100,29 +126,55 @@ impl MainUI {
                 self.show_resources = show_res;
             }
 
+            // Entities
+            if self.show_entities {
+                let mut show_entities = self.show_entities;
+                egui::Window::new("Entities")
+                    .open(&mut show_entities)
+                    .resizable(true)
+                    .show(egui_ctx, |ui| {
+                        ui.label(format!("Total Entities: {}", map.entities.len()));
+                        ui.separator();
+                        let row_height = ui.spacing().interact_size.y;
+                        let num_rows = map.entities.len();
+                        egui::ScrollArea::vertical()
+                            .auto_shrink([false, false])
+                            .show_rows(ui, row_height, num_rows, |ui, row_range| {
+                                for i in row_range {
+                                    let entity = &map.entities[i];
+                                    self.draw_entity_button(ui, i, entity, world_target);
+                                }
+                            });
+                    });
+                self.show_entities = show_entities;
+            }
+
             // Resource Users
             if self.show_users && self.show_users_of.is_some() {
+                let mut show_users = self.show_users;
                 egui::Window::new("Resource Users")
-                    .open(&mut self.show_users)
+                    .open(&mut show_users)
                     .resizable(true)
                     .show(egui_ctx, |ui| {
                         ui.label(format!("'{}' is used by:", self.show_users_of.as_ref().unwrap()));
                         ui.separator();
                         let lower_path = self.show_users_of.as_ref().unwrap().to_lowercase();
-                        let users = self.resource_users.get(&lower_path);
-                        egui::ScrollArea::vertical()
-                            .auto_shrink([false, false])
-                            .show(ui, |ui| {
-                                for user in users.unwrap().clone() {
-                                    let entity = &map.entities[user];
-                                    let btn = egui::Button::new(format!("{} @ {}x{}", entity.entity_type.get_name(), entity.position.x, entity.position.y));
-                                    if ui.add_sized([ui.available_width(), ui.spacing().interact_size.y], btn).clicked() {
-                                        world_target.x = entity.position.x as f32 * TILE_SIZE + TILE_SIZE / 2.0;
-                                        world_target.y = entity.position.y as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+                        let users = self.resource_users.get(&lower_path).cloned();
+                        if let Some(user_list) = users {
+                            let row_height = ui.spacing().interact_size.y;
+                            let num_rows = user_list.len();
+                            egui::ScrollArea::vertical()
+                                .auto_shrink([false, false])
+                                .show_rows(ui, row_height, num_rows, |ui, row_range| {
+                                    for idx in row_range {
+                                        let user = user_list[idx];
+                                        let entity = &map.entities[user];
+                                        self.draw_entity_button(ui, user, entity, world_target);
                                     }
-                                }
-                            });
+                                });
+                        }
                     });
+                self.show_users = show_users;
             }
         });
     }
@@ -143,5 +195,14 @@ impl MainUI {
                 });
             });
         });
+    }
+
+    fn draw_entity_button(&mut self, ui: &mut egui::Ui, index: usize, entity: &Entity, world_target: &mut Vec2) {
+        let text = format!("[{}] {} @ {}|{}", index, entity.entity_type.get_name(), entity.position.x, entity.position.y);
+        let btn = egui::Button::new(text);
+        if ui.add_sized([ui.available_width(), ui.spacing().interact_size.y], btn).clicked() {
+            world_target.x = entity.position.x as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+            world_target.y = entity.position.y as f32 * TILE_SIZE + TILE_SIZE / 2.0;
+        }
     }
 }
