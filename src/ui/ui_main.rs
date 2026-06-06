@@ -17,7 +17,9 @@ pub struct MainUI {
     show_users: bool,
     show_entities: bool,
     cached_loaded: Vec<String>,
-    cached_missing: Vec<String>
+    cached_missing: Vec<String>,
+    entity_filter: Option<EntityType>,
+    entity_types_cache: Vec<(String, Option<EntityType>, usize)>
 }
 
 impl MainUI {
@@ -73,6 +75,7 @@ impl MainUI {
                         }
                         if ui.button("Entities").clicked() {
                             self.show_entities = !self.show_entities;
+                            self.entity_types_cache.clear();
                         }
                     });
                     ui.separator();
@@ -128,19 +131,68 @@ impl MainUI {
 
             // Entities
             if self.show_entities {
+                if self.entity_types_cache.is_empty() && !map.entities.is_empty() {
+                    let mut counts: HashMap<u8, usize> = HashMap::new();
+                    for entity in &map.entities {
+                        *counts.entry(entity.entity_type.clone() as u8).or_insert(0) += 1;
+                    }
+                    let mut list: Vec<(String, Option<EntityType>, usize)> = Vec::new();
+                    list.push((format!("All ({})", map.entities.len()), None, map.entities.len()));
+
+                    let mut typed_entries: Vec<(String, EntityType, usize)> = Vec::new();
+                    for (etype_u8, count) in counts {
+                        let etype = EntityType::from(etype_u8);
+                        typed_entries.push((etype.get_name().to_string(), etype, count));
+                    }
+                    typed_entries.sort_by(|a, b| a.0.cmp(&b.0));
+
+                    for (name, etype, count) in typed_entries {
+                        list.push((format!("{} ({})", name, count), Some(etype), count));
+                    }
+                    self.entity_types_cache = list;
+                }
+
                 let mut show_entities = self.show_entities;
                 egui::Window::new("Entities")
                     .open(&mut show_entities)
                     .resizable(true)
                     .show(egui_ctx, |ui| {
-                        ui.label(format!("Total Entities: {}", map.entities.len()));
+                        ui.horizontal(|ui| {
+                            ui.label(format!("Total Entities: {}", map.entities.len()));
+
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                let selected_label = if let Some(ref entry) = self.entity_types_cache.iter().find(|x| x.1 == self.entity_filter) {
+                                    entry.0.clone()
+                                } else {
+                                    "All".to_string()
+                                };
+                                egui::ComboBox::from_id_salt("entity_filter_combo")
+                                    .selected_text(&selected_label)
+                                    .show_ui(ui, |ui| {
+                                        for entry in &self.entity_types_cache {
+                                            ui.selectable_value(&mut self.entity_filter, entry.1.clone(), &entry.0);
+                                        }
+                                    });
+                            });
+                        });
                         ui.separator();
+
+                        let filtered_indices: Vec<usize> = if let Some(ref filter_type) = self.entity_filter {
+                            map.entities.iter().enumerate()
+                                .filter(|(_, e)| e.entity_type == *filter_type)
+                                .map(|(i, _)| i)
+                                .collect()
+                        } else {
+                            (0..map.entities.len()).collect()
+                        };
+
                         let row_height = ui.spacing().interact_size.y;
-                        let num_rows = map.entities.len();
+                        let num_rows = filtered_indices.len();
                         egui::ScrollArea::vertical()
                             .auto_shrink([false, false])
                             .show_rows(ui, row_height, num_rows, |ui, row_range| {
-                                for i in row_range {
+                                for idx in row_range {
+                                    let i = filtered_indices[idx];
                                     let entity = &map.entities[i];
                                     self.draw_entity_button(ui, i, entity, world_target);
                                 }
