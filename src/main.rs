@@ -152,6 +152,14 @@ async fn main() {
                 });
             }
 
+            if is_key_released(KeyCode::E) {
+                SETTINGS.with(|s| {
+                    let mut settings = s.borrow_mut();
+                    settings.entities = !settings.entities;
+                });
+            }
+
+
             let current_pos: (f32, f32);
             let pointer_down: bool;
             let active_touches = touches();
